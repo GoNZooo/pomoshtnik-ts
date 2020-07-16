@@ -55,7 +55,6 @@ const handleCommand = async (
         case "Right": {
           if (maybePeople.right.length > 0) {
             const person = maybePeople.right[0];
-            console.log(person);
             const posterUrl =
               person.profile_path !== null
                 ? `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
