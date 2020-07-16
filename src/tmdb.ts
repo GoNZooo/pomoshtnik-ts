@@ -31,6 +31,8 @@ export type PosterSize = keyof typeof posterDefinition;
 
 export const ProfileSize = t.keyof(profileDefinition);
 
+// Defines sizes for profile pictures to link to; these are located at different
+// trees on TMDB's server.
 export type ProfileSize = keyof typeof profileDefinition;
 
 export const preferredPosterSize: PosterSize = "w185";
