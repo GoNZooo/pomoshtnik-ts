@@ -48,25 +48,37 @@ const handleCommand = async (
       return;
     }
 
-    case "!actor": {
-      const maybeActors = await tmdb.searchActor(tmdbApiKey, command.name);
-      switch (maybeActors._tag) {
+    case "!person": {
+      const maybePeople = await tmdb.searchActor(tmdbApiKey, command.name);
+      switch (maybePeople._tag) {
         case "Right": {
-          const actor = maybeActors.right[0];
-          const posterUrl = `${imageBaseUrl}${tmdb.preferredProfileSize}${actor.profile_path}`;
-          const embed = new Discord.MessageEmbed({ image: { url: posterUrl } });
-          message.reply(actor.name, embed);
+          const person = maybePeople.right[0];
+          const posterUrl = `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`;
+          const embed = new Discord.MessageEmbed({
+            title: person.name,
+            image: { url: posterUrl },
+            footer: {
+              text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
+            },
+          });
+          person.known_for.forEach((movie) => {
+            embed.addField(
+              `${movie.release_date}: ${movie.title} (${movie.vote_average})`,
+              movie.overview
+            );
+          });
+          message.reply(embed);
 
           break;
         }
 
         case "Left": {
-          message.reply(`Unable to decode response: ${JSON.stringify(maybeActors.left)}`);
+          message.reply(`Unable to decode response: ${JSON.stringify(maybePeople.left)}`);
           break;
         }
 
         default:
-          assertUnreachable(maybeActors);
+          assertUnreachable(maybePeople);
       }
 
       return;
@@ -94,7 +106,7 @@ client.on("message", (message) => {
     const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
     switch (decodedCommand._tag) {
       case "Left": {
-        throw new Error("bleh");
+        break;
       }
 
       case "Right": {

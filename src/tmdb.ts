@@ -55,6 +55,7 @@ export const Movie = t.type({
 
 export type Movie = t.TypeOf<typeof Movie>;
 
+export const Person = t.type({
   popularity: t.number,
   name: t.string,
   id: t.number,
@@ -63,12 +64,12 @@ export type Movie = t.TypeOf<typeof Movie>;
   known_for_department: t.string,
 });
 
-export type Actor = t.TypeOf<typeof Actor>;
+export type Person = t.TypeOf<typeof Person>;
 
-export const ActorSearchResult = t.type({
+export const PersonSearchResult = t.type({
   page: t.number,
   total_results: t.number,
-  results: t.array(Actor),
+  results: t.array(Person),
 });
 
 const configurationSuffix = `configuration`;
@@ -83,11 +84,11 @@ export const getConfiguration = async (
 export const searchActor = async (
   apiKey: string,
   name: string
-): Promise<Either<t.Errors, Actor[]>> => {
+): Promise<Either<t.Errors, Person[]>> => {
   const result = await fetch(`${apiUrl}search/person/?query=${name}&page=1&api_key=${apiKey}`);
   const json = await result.json();
 
-  return either.chain(ActorSearchResult.decode(json), (searchResults) => {
+  return either.chain(PersonSearchResult.decode(json), (searchResults) => {
     return right(searchResults.results);
   });
 };

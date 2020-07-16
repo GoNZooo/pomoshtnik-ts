@@ -4,7 +4,7 @@ import { assertUnreachable } from "./utilities";
 
 export const MovieCommand = t.type({ type: t.literal("!movie"), name: t.string });
 
-export const ActorCommand = t.type({ type: t.literal("!actor"), name: t.string });
+export const PersonCommand = t.type({ type: t.literal("!person"), name: t.string });
 
 export const ShowCommand = t.type({ type: t.literal("!show"), name: t.string });
 
@@ -13,7 +13,7 @@ export const PingCommand = t.type({ type: t.literal("!ping") });
 export const WhoAreYouCommand = t.type({ type: t.literal("!whoareyou") });
 
 export const Command = t.union(
-  [PingCommand, WhoAreYouCommand, MovieCommand, ActorCommand, ShowCommand],
+  [PingCommand, WhoAreYouCommand, MovieCommand, PersonCommand, ShowCommand],
   "Command"
 );
 
@@ -21,14 +21,14 @@ export type Command = t.TypeOf<typeof Command>;
 
 export const CommandFromList = new t.Type<Command, string[], unknown>(
   "CommandFromList",
-  (u): u is Command => ["!ping", "!whoareyou", "!movie", "!actor", "!show"].some((v) => v === u),
+  (u): u is Command => ["!ping", "!whoareyou", "!movie", "!person", "!show"].some((v) => v === u),
   (u, c) => {
     return either.chain(t.array(t.string).validate(u, c), (stringArray) => {
       const [messageType, ...args] = stringArray;
 
       switch (messageType) {
-        case "!actor": {
-          return t.success({ type: "!actor", name: args.join(" ") });
+        case "!person": {
+          return t.success({ type: "!person", name: args.join(" ") });
         }
         case "!movie": {
           return t.success({ type: "!movie", name: args.join(" ") });
@@ -50,8 +50,8 @@ export const CommandFromList = new t.Type<Command, string[], unknown>(
   },
   (c) => {
     switch (c.type) {
-      case "!actor": {
-        return ["!actor", ...c.name.split(" ")];
+      case "!person": {
+        return ["!person", ...c.name.split(" ")];
       }
       case "!movie": {
         return ["!movie", ...c.name.split(" ")];
