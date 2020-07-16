@@ -1,13 +1,10 @@
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
-import fetch from "isomorphic-fetch";
-import * as t from "io-ts";
 import * as tmdb from "./tmdb";
 import { PathReporter } from "io-ts/lib/PathReporter";
 import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import { assertUnreachable } from "./utilities";
-import { assert } from "console";
 
 dotenv.config();
 
