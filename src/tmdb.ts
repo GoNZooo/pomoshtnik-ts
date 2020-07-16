@@ -44,11 +44,23 @@ export const ConfigurationData = t.type({ images: ImageConfigurationData });
 
 export type ConfigurationData = t.TypeOf<typeof ConfigurationData>;
 
-export const Actor = t.type({
+export const Movie = t.type({
+  poster_path: t.string,
+  id: t.number,
+  title: t.string,
+  vote_average: t.number,
+  release_date: t.string,
+  overview: t.string,
+});
+
+export type Movie = t.TypeOf<typeof Movie>;
+
   popularity: t.number,
   name: t.string,
   id: t.number,
   profile_path: t.string,
+  known_for: t.array(Movie),
+  known_for_department: t.string,
 });
 
 export type Actor = t.TypeOf<typeof Actor>;
