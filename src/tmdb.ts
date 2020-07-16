@@ -4,6 +4,8 @@ import fetch from "isomorphic-fetch";
 
 const apiUrl = "https://api.themoviedb.org/3/";
 
+// Defines sizes for posters to link to; these are located at different trees in
+// TMDB's server.
 const posterDefinition = {
   w92: null,
   w154: null,
@@ -13,6 +15,8 @@ const posterDefinition = {
   w780: null,
   original: null,
 } as const;
+// Ordinarily this would just be a list of strings that make up the enum but `io-ts`
+// encourages using `keyof` of an object to make the enum/union.
 
 const profileDefinition = {
   w45: null,
