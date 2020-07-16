@@ -66,10 +66,14 @@ const handleCommand = async (
                 text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
               },
             });
-            person.known_for.forEach((movie) => {
-              const title = movie.title ?? "N/A";
-              const releaseDate = movie.release_date ?? "N/A";
-              embed.addField(`${releaseDate}: ${title} (${movie.vote_average})`, movie.overview);
+            person.known_for.forEach((media) => {
+              const title =
+                media.media_type === "movie" ? media.title ?? "N/A" : media.name ?? "N/A";
+              const releaseDate =
+                media.media_type === "movie"
+                  ? media.release_date ?? "N/A"
+                  : media.first_air_date ?? "N/A";
+              embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
             });
             message.reply(embed);
           } else {
