@@ -107,8 +107,6 @@ export const searchPerson = async (
     `${apiUrl}search/person?query=${name}&language=en-US&page=1&api_key=${apiKey}`
   );
   const json = await result.json();
-  console.log("json:", json);
-  console.log("json:", json.results[0].known_for);
 
   return either.chain(PersonSearchResult.decode(json), (searchResults) => {
     return right(searchResults.results);
