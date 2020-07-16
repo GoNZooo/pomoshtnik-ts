@@ -1,7 +1,6 @@
 import * as t from "io-ts";
-import { Either, either, isRight, left, right } from "fp-ts/lib/Either";
+import { Either, either, right } from "fp-ts/lib/Either";
 import fetch from "isomorphic-fetch";
-import { Option, none, some } from "fp-ts/lib/Option";
 
 const apiUrl = "https://api.themoviedb.org/3/";
 
