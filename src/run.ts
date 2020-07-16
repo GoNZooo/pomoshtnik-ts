@@ -49,7 +49,7 @@ const handleCommand = async (
     }
 
     case "!person": {
-      const maybePeople = await tmdb.searchActor(tmdbApiKey, command.name);
+      const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.name);
       switch (maybePeople._tag) {
         case "Right": {
           const person = maybePeople.right[0];

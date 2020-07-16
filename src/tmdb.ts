@@ -86,7 +86,7 @@ export const getConfiguration = async (
   );
 };
 
-export const searchActor = async (
+export const searchPerson = async (
   apiKey: string,
   name: string
 ): Promise<Either<t.Errors, Person[]>> => {
