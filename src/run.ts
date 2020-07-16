@@ -5,6 +5,7 @@ import { PathReporter } from "io-ts/lib/PathReporter";
 import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import { assertUnreachable } from "./utilities";
+import reporter from "io-ts-reporters";
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ let imageBaseUrl: string;
 client.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
 
-  console.log(PathReporter.report(configurationResponse));
+  console.log(reporter.report(configurationResponse));
 
   if (either.isRight(configurationResponse)) {
     imageBaseUrl = `${configurationResponse.right.images.base_url}`;
@@ -52,28 +53,35 @@ const handleCommand = async (
       const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.name);
       switch (maybePeople._tag) {
         case "Right": {
-          const person = maybePeople.right[0];
-          const posterUrl = `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`;
-          const embed = new Discord.MessageEmbed({
-            title: person.name,
-            image: { url: posterUrl },
-            footer: {
-              text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
-            },
-          });
-          person.known_for.forEach((movie) => {
-            embed.addField(
-              `${movie.release_date}: ${movie.title} (${movie.vote_average})`,
-              movie.overview
-            );
-          });
-          message.reply(embed);
+          if (maybePeople.right.length > 0) {
+            const person = maybePeople.right[0];
+            console.log(person);
+            const posterUrl =
+              person.profile_path !== null
+                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
+                : "";
+            const embed = new Discord.MessageEmbed({
+              title: person.name,
+              image: { url: posterUrl },
+              footer: {
+                text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
+              },
+            });
+            person.known_for.forEach((movie) => {
+              const title = movie.title ?? "N/A";
+              const releaseDate = movie.release_date ?? "N/A";
+              embed.addField(`${releaseDate}: ${title} (${movie.vote_average})`, movie.overview);
+            });
+            message.reply(embed);
+          } else {
+            message.reply(`No results returned for '${command.name}'.`);
+          }
 
           break;
         }
 
         case "Left": {
-          message.reply(`Unable to decode response: ${JSON.stringify(maybePeople.left)}`);
+          console.log("error:", reporter.report(maybePeople).join(" "));
           break;
         }
 

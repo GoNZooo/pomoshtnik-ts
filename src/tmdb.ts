@@ -50,11 +50,11 @@ export const ConfigurationData = t.type({ images: ImageConfigurationData });
 export type ConfigurationData = t.TypeOf<typeof ConfigurationData>;
 
 export const Movie = t.type({
-  poster_path: t.string,
+  poster_path: t.union([t.undefined, t.string]),
   id: t.number,
-  title: t.string,
+  title: t.union([t.undefined, t.string]),
   vote_average: t.number,
-  release_date: t.string,
+  release_date: t.union([t.undefined, t.string]),
   overview: t.string,
 });
 
@@ -64,7 +64,7 @@ export const Person = t.type({
   popularity: t.number,
   name: t.string,
   id: t.number,
-  profile_path: t.string,
+  profile_path: t.union([t.null, t.string]),
   known_for: t.array(Movie),
   known_for_department: t.string,
 });
@@ -90,8 +90,11 @@ export const searchPerson = async (
   apiKey: string,
   name: string
 ): Promise<Either<t.Errors, Person[]>> => {
-  const result = await fetch(`${apiUrl}search/person/?query=${name}&page=1&api_key=${apiKey}`);
+  const result = await fetch(
+    `${apiUrl}search/person?query=${name}&language=en-US&page=1&api_key=${apiKey}`
+  );
   const json = await result.json();
+  console.log("json:", json);
 
   return either.chain(PersonSearchResult.decode(json), (searchResults) => {
     return right(searchResults.results);
