@@ -4,8 +4,6 @@ import fetch from "isomorphic-fetch";
 
 const apiUrl = "https://api.themoviedb.org/3/";
 
-// Defines sizes for posters to link to; these are located at different trees in
-// TMDB's server.
 const posterDefinition = {
   w92: null,
   w154: null,
@@ -27,6 +25,8 @@ const profileDefinition = {
 
 export const PosterSize = t.keyof(posterDefinition);
 
+// Defines sizes for posters to link to; these are located at different trees on
+// TMDB's server.
 export type PosterSize = keyof typeof posterDefinition;
 
 export const ProfileSize = t.keyof(profileDefinition);
