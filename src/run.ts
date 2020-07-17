@@ -215,11 +215,8 @@ client.on("message", (message) => {
       }
 
       case "Right": {
-        if (commands.Command.is(decodedCommand.right)) {
-          handleCommand(decodedCommand.right, message);
-        } else {
-          console.error("Unable to decode message:", decodedCommand.right);
-        }
+        handleCommand(decodedCommand.right, message);
+
         break;
       }
 
