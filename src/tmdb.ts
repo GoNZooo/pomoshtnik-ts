@@ -60,6 +60,17 @@ export const Movie = t.type({
 
 export type Movie = t.TypeOf<typeof Movie>;
 
+export const Show = t.type({
+  poster_path: t.union([t.null, t.string]),
+  id: t.number,
+  name: t.string,
+  vote_average: t.number,
+  first_air_date: t.union([t.undefined, t.string]),
+  overview: t.string,
+});
+
+export type Show = t.TypeOf<typeof Show>;
+
 export const KnownForMovie = t.type({
   media_type: t.literal("movie"),
   poster_path: t.union([t.undefined, t.string]),
@@ -105,6 +116,12 @@ export const MovieSearchResult = t.type({
   page: t.number,
   total_results: t.number,
   results: t.array(Movie),
+});
+
+export const ShowSearchResult = t.type({
+  page: t.number,
+  total_results: t.number,
+  results: t.array(Show),
 });
 
 export const CastEntry = t.type({
@@ -158,6 +175,20 @@ export const searchMovie = async (
   const json = await result.json();
 
   return either.chain(MovieSearchResult.decode(json), (searchResults) => {
+    return right(searchResults.results);
+  });
+};
+
+export const searchShow = async (
+  apiKey: string,
+  name: string
+): Promise<Either<t.Errors, Show[]>> => {
+  const result = await fetch(
+    `${apiUrl}search/tv?query=${name}&language=en-US&page=1&api_key=${apiKey}`
+  );
+  const json = await result.json();
+
+  return either.chain(ShowSearchResult.decode(json), (searchResults) => {
     return right(searchResults.results);
   });
 };

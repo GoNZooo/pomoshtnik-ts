@@ -149,7 +149,54 @@ const handleCommand = async (
     }
 
     case "!show": {
-      message.reply(`Search for actor: ${command.name}`);
+      const maybeShows = await tmdb.searchShow(tmdbApiKey, command.name);
+      switch (maybeShows._tag) {
+        case "Right": {
+          if (maybeShows.right.length > 0) {
+            const show = maybeShows.right[0];
+            const posterUrl =
+              show.poster_path !== null
+                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${show.poster_path}`
+                : "";
+            const credits = await tmdb.getCredits(tmdbApiKey, "tv", show.id);
+            const embed = new Discord.MessageEmbed({
+              title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
+              description: show.overview,
+              image: { url: posterUrl },
+            });
+            switch (credits._tag) {
+              case "Right": {
+                credits.right.cast.forEach((castEntry) => {
+                  embed.addField(castEntry.name, castEntry.character);
+                });
+                break;
+              }
+
+              case "Left": {
+                console.log(`Unable to get credits: ${reporter.report(credits)}`);
+                embed.setFooter(`Unable to get credits: ${reporter.report(credits)}`);
+                break;
+              }
+
+              default:
+                assertUnreachable(credits);
+            }
+            message.reply(embed);
+          } else {
+            message.reply(`No results returned for '${command.name}'.`);
+          }
+
+          break;
+        }
+
+        case "Left": {
+          console.log("error:", reporter.report(maybeShows).join(" "));
+          break;
+        }
+
+        default:
+          assertUnreachable(maybeShows);
+      }
 
       return;
     }
