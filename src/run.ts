@@ -137,7 +137,7 @@ const handleCommand = async (
         }
 
         case "Left": {
-          console.log("error:", reporter.report(maybeMovies).join(" "));
+          console.log("error:", reporter.report(maybeMovies).join("\n"));
           break;
         }
 
@@ -190,7 +190,7 @@ const handleCommand = async (
         }
 
         case "Left": {
-          console.log("error:", reporter.report(maybeShows).join(" "));
+          console.log("error:", reporter.report(maybeShows).join("\n"));
           break;
         }
 
