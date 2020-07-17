@@ -96,7 +96,54 @@ const handleCommand = async (
     }
 
     case "!movie": {
-      message.reply(`Search for movie: ${command.name}`);
+      const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.name);
+      switch (maybeMovies._tag) {
+        case "Right": {
+          if (maybeMovies.right.length > 0) {
+            const movie = maybeMovies.right[0];
+            const posterUrl =
+              movie.poster_path !== null
+                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movie.poster_path}`
+                : "";
+            const credits = await tmdb.getCredits(tmdbApiKey, movie.id);
+            const embed = new Discord.MessageEmbed({
+              title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
+              description: movie.overview,
+              image: { url: posterUrl },
+            });
+            switch (credits._tag) {
+              case "Right": {
+                credits.right.cast.forEach((castEntry) => {
+                  embed.addField(castEntry.name, castEntry.character);
+                });
+                break;
+              }
+
+              case "Left": {
+                console.log(`Unable to get credits: ${reporter.report(credits)}`);
+                embed.setFooter(`Unable to get credits: ${reporter.report(credits)}`);
+                break;
+              }
+
+              default:
+                assertUnreachable(credits);
+            }
+            message.reply(embed);
+          } else {
+            message.reply(`No results returned for '${command.name}'.`);
+          }
+
+          break;
+        }
+
+        case "Left": {
+          console.log("error:", reporter.report(maybeMovies).join(" "));
+          break;
+        }
+
+        default:
+          assertUnreachable(maybeMovies);
+      }
 
       return;
     }
