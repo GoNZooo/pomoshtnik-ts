@@ -105,7 +105,7 @@ const handleCommand = async (
               movie.poster_path !== null
                 ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movie.poster_path}`
                 : "";
-            const credits = await tmdb.getCredits(tmdbApiKey, movie.id);
+            const credits = await tmdb.getCredits(tmdbApiKey, "movie", movie.id);
             const embed = new Discord.MessageEmbed({
               title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
               description: movie.overview,

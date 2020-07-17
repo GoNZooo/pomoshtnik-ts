@@ -176,11 +176,16 @@ export const searchPerson = async (
   });
 };
 
+type ResourceType = "movie" | "tv";
+
 export const getCredits = async (
   apiKey: string,
-  movieId: number
+  resourceType: ResourceType,
+  id: number
 ): Promise<Either<t.Errors, Credits>> => {
-  const result = await fetch(`${apiUrl}movie/${movieId}/credits?language=en-US&api_key=${apiKey}`);
+  const result = await fetch(
+    `${apiUrl}${resourceType}/${id}/credits?language=en-US&api_key=${apiKey}`
+  );
   const json = await result.json();
 
   return Credits.decode(json);
