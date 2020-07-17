@@ -108,7 +108,8 @@ export const MovieSearchResult = t.type({
 });
 
 export const CastEntry = t.type({
-  cast_id: t.number,
+  // disabling this because it causes issues with different formats for TV and movies
+  // cast_id: t.number,
   character: t.string,
   credit_id: t.string,
   id: t.number,
