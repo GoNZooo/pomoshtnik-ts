@@ -154,47 +154,59 @@ const handleCommand = async (
       switch (maybeShows._tag) {
         case "Right": {
           if (maybeShows.right.length > 0) {
-            const show = maybeShows.right[0];
+            const showCandidate = maybeShows.right[0];
             const posterUrl =
-              show.poster_path !== null
-                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${show.poster_path}`
+              showCandidate.poster_path !== null
+                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${showCandidate.poster_path}`
                 : "";
-            // @TODO: Execute a full query using `/tv/{show_id}` with
-            // `append_to_response` here that gets all data. This can include
-            // season & episode data, past and future air dates, etc.
-            const credits = await tmdb.getCredits(tmdbApiKey, "tv", show.id);
-            const embed = new Discord.MessageEmbed({
-              title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
-              description: show.overview,
-              image: { url: posterUrl },
-            });
-            switch (credits._tag) {
+            const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
+            switch (maybeShow._tag) {
               case "Right": {
-                credits.right.cast.forEach((castEntry) => {
+                const show = maybeShow.right;
+                const lastEpisode = show.last_episode_to_air;
+                const description =
+                  lastEpisode !== null
+                    ? [
+                        `Last episode: ${lastEpisode?.name} (S${lastEpisode?.season_number
+                          .toFixed(0)
+                          .padStart(2, "0")}E${lastEpisode?.episode_number
+                          .toFixed(0)
+                          .padStart(2, "0")}) aired on ${lastEpisode?.air_date ?? "N/A"}`,
+                        `${lastEpisode?.overview ?? "N/A"}`,
+                      ].join("\n")
+                    : "N/A";
+                const embed = new Discord.MessageEmbed({
+                  title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
+                  description,
+                  image: { url: posterUrl },
+                });
+                show.credits.cast.forEach((castEntry) => {
                   embed.addField(castEntry.name, castEntry.character);
                 });
+
+                message.reply(show.overview, embed);
+
                 break;
               }
 
               case "Left": {
-                console.log(`Unable to get credits: ${reporter.report(credits)}`);
-                embed.setFooter(`Unable to get credits: ${reporter.report(credits)}`);
+                console.log(`Unable to get credits: ${reporter.report(maybeShow)}`);
+
                 break;
               }
 
               default:
-                assertUnreachable(credits);
+                assertUnreachable(maybeShow);
             }
-            message.reply(embed);
-          } else {
-            message.reply(`No results returned for '${command.name}'.`);
-          }
 
+            break;
+          }
           break;
         }
 
         case "Left": {
           console.log("error:", reporter.report(maybeShows).join("\n"));
+
           break;
         }
 

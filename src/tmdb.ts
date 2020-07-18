@@ -104,7 +104,34 @@ export const MovieCandidate = t.type({
 
 export type MovieCandidate = t.TypeOf<typeof MovieCandidate>;
 
+export const Episode = t.type({
+  air_date: t.string,
+  id: t.number,
+  name: t.string,
+  overview: t.string,
+  season_number: t.number,
+  episode_number: t.number,
+  still_path: t.union([t.null, t.string]),
+  vote_average: t.number,
+  vote_count: t.number,
+});
+
+export type Episode = t.TypeOf<typeof Episode>;
+
 export const Show = t.type({
+  poster_path: t.union([t.null, t.string]),
+  id: t.number,
+  name: t.string,
+  vote_average: t.number,
+  first_air_date: t.union([t.undefined, t.string]),
+  overview: t.string,
+  credits: Credits,
+  last_episode_to_air: t.union([t.null, Episode]),
+});
+
+export type Show = t.TypeOf<typeof Show>;
+
+export const ShowCandidate = t.type({
   poster_path: t.union([t.null, t.string]),
   id: t.number,
   name: t.string,
@@ -113,7 +140,7 @@ export const Show = t.type({
   overview: t.string,
 });
 
-export type Show = t.TypeOf<typeof Show>;
+export type ShowCandidate = t.TypeOf<typeof ShowCandidate>;
 
 export const KnownForMovie = t.type({
   media_type: t.literal("movie"),
@@ -165,7 +192,7 @@ export const MovieSearchResult = t.type({
 export const ShowSearchResult = t.type({
   page: t.number,
   total_results: t.number,
-  results: t.array(Show),
+  results: t.array(ShowCandidate),
 });
 
 const configurationSuffix = `configuration`;
@@ -194,7 +221,7 @@ export const searchMovie = async (
 export const searchShow = async (
   apiKey: string,
   name: string
-): Promise<Either<t.Errors, Show[]>> => {
+): Promise<Either<t.Errors, ShowCandidate[]>> => {
   const result = await fetch(
     `${apiUrl}search/tv?query=${name}&language=en-US&page=1&api_key=${apiKey}`
   );
@@ -241,4 +268,13 @@ export const getMovie = async (apiKey: string, id: number): Promise<Either<t.Err
   const json = await result.json();
 
   return Movie.decode(json);
+};
+
+export const getShow = async (apiKey: string, id: number): Promise<Either<t.Errors, Show>> => {
+  const result = await fetch(
+    `${apiUrl}tv/${id}?language=en-US&append_to_response=credits&api_key=${apiKey}`
+  );
+  const json = await result.json();
+
+  return Show.decode(json);
 };
