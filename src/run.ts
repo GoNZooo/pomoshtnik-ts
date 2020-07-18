@@ -75,6 +75,7 @@ const handleCommand = async (
                   : media.first_air_date ?? "N/A";
               embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
             });
+
             message.reply(embed);
           } else {
             message.reply(`No results returned for '${command.name}'.`);
@@ -85,6 +86,7 @@ const handleCommand = async (
 
         case "Left": {
           console.log("error:", reporter.report(maybePeople).join(" "));
+
           break;
         }
 
@@ -124,6 +126,7 @@ const handleCommand = async (
 
               case "Left": {
                 console.log(reporter.report(maybeMovie));
+
                 break;
               }
 
@@ -139,6 +142,7 @@ const handleCommand = async (
 
         case "Left": {
           console.log("error:", reporter.report(maybeMovies).join("\n"));
+
           break;
         }
 
@@ -226,12 +230,14 @@ client.on("message", (message) => {
   if (!message.author.bot) {
     const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
     switch (decodedCommand._tag) {
-      case "Left": {
+      case "Right": {
+        handleCommand(decodedCommand.right, message);
+
         break;
       }
 
-      case "Right": {
-        handleCommand(decodedCommand.right, message);
+      case "Left": {
+        console.log("Unable to decode message:", reporter.report(decodedCommand));
 
         break;
       }
