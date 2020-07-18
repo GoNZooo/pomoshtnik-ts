@@ -105,6 +105,9 @@ const handleCommand = async (
               movie.poster_path !== null
                 ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movie.poster_path}`
                 : "";
+            // @TODO: Execute a full query using `/movie/{movie_id}` with
+            // `append_to_response` here that gets all data. `combined_credits`
+            // is the call to be added for credits; TV & Movies.
             const credits = await tmdb.getCredits(tmdbApiKey, "movie", movie.id);
             const embed = new Discord.MessageEmbed({
               title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
@@ -158,9 +161,6 @@ const handleCommand = async (
               show.poster_path !== null
                 ? `${imageBaseUrl}${tmdb.preferredProfileSize}${show.poster_path}`
                 : "";
-            // @TODO: Execute a full query using `/person/{person_id}` with
-            // `append_to_response` here that gets all data. `combined_credits`
-            // is the call to be added for credits; TV & Movies.
             const credits = await tmdb.getCredits(tmdbApiKey, "tv", show.id);
             const embed = new Discord.MessageEmbed({
               title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
