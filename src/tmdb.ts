@@ -284,21 +284,6 @@ export const searchPerson = async (
   });
 };
 
-type ResourceType = "movie" | "tv";
-
-export const getCredits = async (
-  apiKey: string,
-  resourceType: ResourceType,
-  id: number
-): Promise<Either<t.Errors, Credits>> => {
-  const result = await fetch(
-    `${apiUrl}${resourceType}/${id}/credits?language=en-US&api_key=${apiKey}`
-  );
-  const json = await result.json();
-
-  return Credits.decode(json);
-};
-
 export const getMovie = async (apiKey: string, id: number): Promise<Either<t.Errors, Movie>> => {
   const result = await fetch(
     `${apiUrl}movie/${id}?language=en-US&append_to_response=credits&api_key=${apiKey}`
