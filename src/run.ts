@@ -115,7 +115,7 @@ const handleCommand = async (
                   image: { url: posterUrl },
                 });
                 const castEntries = movie.credits.cast.map((castEntry) => {
-                  return `${castEntry.name} as ${castEntry.character}`;
+                  return `**${castEntry.name}** as ${castEntry.character}`;
                 });
                 embed.addField("Description", movie.overview);
                 // tslint:disable-next-line: no-magic-numbers
@@ -172,11 +172,11 @@ const handleCommand = async (
                 const lastEpisodeDescription =
                   lastEpisode !== null
                     ? [
-                        `${lastEpisode?.name} (S${lastEpisode?.season_number
+                        `**${lastEpisode?.name}** (S${lastEpisode?.season_number
                           .toFixed(0)
                           .padStart(2, "0")}E${lastEpisode?.episode_number
                           .toFixed(0)
-                          .padStart(2, "0")}) aired on ${lastEpisode?.air_date ?? "N/A"}`,
+                          .padStart(2, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
                         `${lastEpisode?.overview ?? "N/A"}`,
                       ].join("\n")
                     : "N/A";
@@ -186,8 +186,9 @@ const handleCommand = async (
                 });
                 embed.addField("Description", show.overview);
                 embed.addField("Last Episode", lastEpisodeDescription);
-                const castEntries = show.credits.cast.map((castEntry) => {
-                  return `${castEntry.name} as ${castEntry.character}`;
+                // tslint:disable-next-line: no-magic-numbers
+                const castEntries = show.credits.cast.slice(0, 25).map((castEntry) => {
+                  return `**${castEntry.name}** as ${castEntry.character}`;
                 });
                 embed.addField("Cast", castEntries.join("\n"));
 
