@@ -167,10 +167,10 @@ const handleCommand = async (
               case "Right": {
                 const show = maybeShow.right;
                 const lastEpisode = show.last_episode_to_air;
-                const description =
+                const lastEpisodeDescription =
                   lastEpisode !== null
                     ? [
-                        `Last episode: ${lastEpisode?.name} (S${lastEpisode?.season_number
+                        `${lastEpisode?.name} (S${lastEpisode?.season_number
                           .toFixed(0)
                           .padStart(2, "0")}E${lastEpisode?.episode_number
                           .toFixed(0)
@@ -180,14 +180,16 @@ const handleCommand = async (
                     : "N/A";
                 const embed = new Discord.MessageEmbed({
                   title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
-                  description,
                   image: { url: posterUrl },
                 });
-                show.credits.cast.forEach((castEntry) => {
-                  embed.addField(castEntry.name, castEntry.character);
+                embed.addField("Description", show.overview);
+                embed.addField("Last Episode", lastEpisodeDescription);
+                const castEntries = show.credits.cast.map((castEntry) => {
+                  return `${castEntry.name} as ${castEntry.character}`;
                 });
+                embed.addField("Cast", castEntries.join("\n"));
 
-                message.reply(show.overview, embed);
+                message.reply(embed);
 
                 break;
               }
