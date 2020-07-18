@@ -18,7 +18,7 @@ let imageBaseUrl: string;
 client.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
 
-  console.log(reporter.report(configurationResponse));
+  console.error(reporter.report(configurationResponse));
 
   if (either.isRight(configurationResponse)) {
     imageBaseUrl = `${configurationResponse.right.images.base_url}`;
@@ -84,7 +84,7 @@ const handleCommand = async (
         }
 
         case "Left": {
-          console.log("error:", reporter.report(maybePeople).join(" "));
+          console.error("error:", reporter.report(maybePeople).join(" "));
 
           break;
         }
@@ -112,19 +112,21 @@ const handleCommand = async (
                 const movie = maybeMovie.right;
                 const embed = new Discord.MessageEmbed({
                   title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
-                  description: movie.overview,
                   image: { url: posterUrl },
                 });
-                movie.credits.cast.forEach((castEntry) => {
-                  embed.addField(castEntry.name, castEntry.character);
+                const castEntries = movie.credits.cast.map((castEntry) => {
+                  return `${castEntry.name} as ${castEntry.character}`;
                 });
+                embed.addField("Description", movie.overview);
+                // tslint:disable-next-line: no-magic-numbers
+                embed.addField("Cast", castEntries.slice(0, 25).join("\n"));
                 message.reply(embed);
 
                 break;
               }
 
               case "Left": {
-                console.log(reporter.report(maybeMovie));
+                console.error(reporter.report(maybeMovie));
 
                 break;
               }
@@ -140,7 +142,7 @@ const handleCommand = async (
         }
 
         case "Left": {
-          console.log("error:", reporter.report(maybeMovies).join("\n"));
+          console.error("error:", reporter.report(maybeMovies).join("\n"));
 
           break;
         }
@@ -195,7 +197,7 @@ const handleCommand = async (
               }
 
               case "Left": {
-                console.log(`Unable to get credits: ${reporter.report(maybeShow)}`);
+                console.error(`Unable to get credits: ${reporter.report(maybeShow)}`);
 
                 break;
               }
@@ -210,7 +212,7 @@ const handleCommand = async (
         }
 
         case "Left": {
-          console.log("error:", reporter.report(maybeShows).join("\n"));
+          console.error("error:", reporter.report(maybeShows).join("\n"));
 
           break;
         }
@@ -238,7 +240,7 @@ client.on("message", (message) => {
       }
 
       case "Left": {
-        console.log("Unable to decode message:", reporter.report(decodedCommand));
+        console.error("Unable to decode message:", reporter.report(decodedCommand));
 
         break;
       }
