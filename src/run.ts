@@ -1,7 +1,6 @@
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
-import { PathReporter } from "io-ts/lib/PathReporter";
 import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import { assertUnreachable } from "./utilities";
