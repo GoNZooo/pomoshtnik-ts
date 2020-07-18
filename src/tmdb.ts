@@ -20,6 +20,22 @@ const profileDefinition = {
   w45: null,
   w185: null,
   w300: null,
+  h632: null,
+  original: null,
+} as const;
+
+const stillDefinition = {
+  w92: null,
+  w185: null,
+  w300: null,
+  h632: null,
+  original: null,
+} as const;
+
+const backdropDefinition = {
+  w300: null,
+  w780: null,
+  w1280: null,
   original: null,
 } as const;
 
@@ -35,6 +51,18 @@ export const ProfileSize = t.keyof(profileDefinition);
 // trees on TMDB's server.
 export type ProfileSize = keyof typeof profileDefinition;
 
+export const StillSize = t.keyof(stillDefinition);
+
+// Defines sizes for stills (movie/TV) to link to; these are located at different
+// trees on TMDB's server.
+export type StillSize = keyof typeof stillDefinition;
+
+export const BackdropSize = t.keyof(backdropDefinition);
+
+// Defines sizes for stills (movie/TV) to link to; these are located at different
+// trees on TMDB's server.
+export type BackdropSize = keyof typeof backdropDefinition;
+
 export const preferredPosterSize: PosterSize = "w185";
 
 export const preferredProfileSize: ProfileSize = "w185";
@@ -43,9 +71,15 @@ export const ImageConfigurationData = t.type({
   base_url: t.string,
   secure_base_url: t.string,
   poster_sizes: t.array(PosterSize),
+  profile_sizes: t.array(ProfileSize),
+  still_sizes: t.array(StillSize),
+  backdrop_sizes: t.array(BackdropSize),
 });
 
-export const ConfigurationData = t.type({ images: ImageConfigurationData });
+export const ConfigurationData = t.type({
+  images: ImageConfigurationData,
+  change_keys: t.array(t.string),
+});
 
 export type ConfigurationData = t.TypeOf<typeof ConfigurationData>;
 
