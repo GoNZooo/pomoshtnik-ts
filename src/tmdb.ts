@@ -67,6 +67,10 @@ export const preferredPosterSize: PosterSize = "w185";
 
 export const preferredProfileSize: ProfileSize = "w185";
 
+export const preferredStillSize: StillSize = "w185";
+
+export const preferredBackdropSize: BackdropSize = "w300";
+
 export const ImageConfigurationData = t.type({
   base_url: t.string,
   secure_base_url: t.string,
