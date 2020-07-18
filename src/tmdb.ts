@@ -49,7 +49,51 @@ export const ConfigurationData = t.type({ images: ImageConfigurationData });
 
 export type ConfigurationData = t.TypeOf<typeof ConfigurationData>;
 
+export const CastEntry = t.type({
+  // disabling this because it causes issues with different formats for TV and movies
+  // cast_id: t.number,
+  character: t.string,
+  credit_id: t.string,
+  id: t.number,
+  name: t.string,
+  order: t.number,
+  profile_path: t.union([t.null, t.string]),
+});
+
+export type CastEntry = t.TypeOf<typeof CastEntry>;
+
+export const CrewEntry = t.type({
+  credit_id: t.string,
+  department: t.string,
+  id: t.number,
+  name: t.string,
+  job: t.string,
+  profile_path: t.union([t.null, t.string]),
+});
+
+export type CrewEntry = t.TypeOf<typeof CrewEntry>;
+
+export const Credits = t.type({
+  id: t.union([t.undefined, t.number]),
+  cast: t.array(CastEntry),
+  crew: t.array(CrewEntry),
+});
+
+export type Credits = t.TypeOf<typeof Credits>;
+
 export const Movie = t.type({
+  poster_path: t.union([t.null, t.string]),
+  id: t.number,
+  title: t.union([t.undefined, t.string]),
+  vote_average: t.number,
+  release_date: t.union([t.undefined, t.string]),
+  overview: t.string,
+  credits: Credits,
+});
+
+export type Movie = t.TypeOf<typeof Movie>;
+
+export const MovieCandidate = t.type({
   poster_path: t.union([t.null, t.string]),
   id: t.number,
   title: t.union([t.undefined, t.string]),
@@ -58,7 +102,7 @@ export const Movie = t.type({
   overview: t.string,
 });
 
-export type Movie = t.TypeOf<typeof Movie>;
+export type MovieCandidate = t.TypeOf<typeof MovieCandidate>;
 
 export const Show = t.type({
   poster_path: t.union([t.null, t.string]),
@@ -115,7 +159,7 @@ export const PersonSearchResult = t.type({
 export const MovieSearchResult = t.type({
   page: t.number,
   total_results: t.number,
-  results: t.array(Movie),
+  results: t.array(MovieCandidate),
 });
 
 export const ShowSearchResult = t.type({
@@ -123,38 +167,6 @@ export const ShowSearchResult = t.type({
   total_results: t.number,
   results: t.array(Show),
 });
-
-export const CastEntry = t.type({
-  // disabling this because it causes issues with different formats for TV and movies
-  // cast_id: t.number,
-  character: t.string,
-  credit_id: t.string,
-  id: t.number,
-  name: t.string,
-  order: t.number,
-  profile_path: t.union([t.null, t.string]),
-});
-
-export type CastEntry = t.TypeOf<typeof CastEntry>;
-
-export const CrewEntry = t.type({
-  credit_id: t.string,
-  department: t.string,
-  id: t.number,
-  name: t.string,
-  job: t.string,
-  profile_path: t.union([t.null, t.string]),
-});
-
-export type CrewEntry = t.TypeOf<typeof CrewEntry>;
-
-export const Credits = t.type({
-  id: t.number,
-  cast: t.array(CastEntry),
-  crew: t.array(CrewEntry),
-});
-
-export type Credits = t.TypeOf<typeof Credits>;
 
 const configurationSuffix = `configuration`;
 export const getConfiguration = async (
@@ -168,7 +180,7 @@ export const getConfiguration = async (
 export const searchMovie = async (
   apiKey: string,
   name: string
-): Promise<Either<t.Errors, Movie[]>> => {
+): Promise<Either<t.Errors, MovieCandidate[]>> => {
   const result = await fetch(
     `${apiUrl}search/movie?query=${name}&language=en-US&page=1&api_key=${apiKey}`
   );
@@ -220,4 +232,13 @@ export const getCredits = async (
   const json = await result.json();
 
   return Credits.decode(json);
+};
+
+export const getMovie = async (apiKey: string, id: number): Promise<Either<t.Errors, Movie>> => {
+  const result = await fetch(
+    `${apiUrl}movie/${id}?language=en-US&append_to_response=credits&api_key=${apiKey}`
+  );
+  const json = await result.json();
+
+  return Movie.decode(json);
 };

@@ -100,38 +100,36 @@ const handleCommand = async (
       switch (maybeMovies._tag) {
         case "Right": {
           if (maybeMovies.right.length > 0) {
-            const movie = maybeMovies.right[0];
+            const movieCandidate = maybeMovies.right[0];
             const posterUrl =
-              movie.poster_path !== null
-                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movie.poster_path}`
+              movieCandidate.poster_path !== null
+                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
                 : "";
-            // @TODO: Execute a full query using `/movie/{movie_id}` with
-            // `append_to_response` here that gets all data. `combined_credits`
-            // is the call to be added for credits; TV & Movies.
-            const credits = await tmdb.getCredits(tmdbApiKey, "movie", movie.id);
-            const embed = new Discord.MessageEmbed({
-              title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
-              description: movie.overview,
-              image: { url: posterUrl },
-            });
-            switch (credits._tag) {
+            const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
+            switch (maybeMovie._tag) {
               case "Right": {
-                credits.right.cast.forEach((castEntry) => {
+                const movie = maybeMovie.right;
+                const embed = new Discord.MessageEmbed({
+                  title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
+                  description: movie.overview,
+                  image: { url: posterUrl },
+                });
+                movie.credits.cast.forEach((castEntry) => {
                   embed.addField(castEntry.name, castEntry.character);
                 });
+                message.reply(embed);
+
                 break;
               }
 
               case "Left": {
-                console.log(`Unable to get credits: ${reporter.report(credits)}`);
-                embed.setFooter(`Unable to get credits: ${reporter.report(credits)}`);
+                console.log(reporter.report(maybeMovie));
                 break;
               }
 
               default:
-                assertUnreachable(credits);
+                assertUnreachable(maybeMovie);
             }
-            message.reply(embed);
           } else {
             message.reply(`No results returned for '${command.name}'.`);
           }
@@ -161,6 +159,9 @@ const handleCommand = async (
               show.poster_path !== null
                 ? `${imageBaseUrl}${tmdb.preferredProfileSize}${show.poster_path}`
                 : "";
+            // @TODO: Execute a full query using `/tv/{show_id}` with
+            // `append_to_response` here that gets all data. This can include
+            // season & episode data, past and future air dates, etc.
             const credits = await tmdb.getCredits(tmdbApiKey, "tv", show.id);
             const embed = new Discord.MessageEmbed({
               title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
