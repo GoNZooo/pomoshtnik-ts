@@ -5,11 +5,15 @@ import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import { assertUnreachable } from "./utilities";
 import reporter from "io-ts-reporters";
+import * as isbndb from "./isbndb";
 
 dotenv.config();
 
 const tmdbApiKey = process.env.TMDB_API_KEY ?? "NOVALUE";
 if (tmdbApiKey === "NOVALUE") throw new Error("No TMDB API key specified.");
+
+const isbndbApiKey = process.env.ISBNDB_KEY ?? "NOVALUE";
+if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.");
 
 const client = new Discord.Client();
 
@@ -220,6 +224,39 @@ const handleCommand = async (
 
         default:
           assertUnreachable(maybeShows);
+      }
+
+      return;
+    }
+
+    case "!isbn": {
+      const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.isbn);
+      switch (maybeBook._tag) {
+        case "Right": {
+          const book = maybeBook.right;
+          const embed = new Discord.MessageEmbed({
+            title: book.title,
+            image: { url: book.image ?? "" },
+          });
+          embed.addField("Overview", book.overview ?? "N/A");
+          embed.addField("Published", book.publish_date);
+          embed.addField("Authors", book.authors.join(", "));
+          embed.addField("Pages", book.pages);
+          embed.addField("Publisher", book.publisher);
+          embed.addField("ISBN", `${book.isbn} & ${book.isbn13}`);
+
+          message.reply(embed);
+          break;
+        }
+
+        case "Left": {
+          console.error("error:", reporter.report(maybeBook));
+
+          break;
+        }
+
+        default:
+          assertUnreachable(maybeBook);
       }
 
       return;
