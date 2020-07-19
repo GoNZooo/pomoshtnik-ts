@@ -76,6 +76,88 @@ const handleCommand = async (
       return;
     }
 
+    default:
+      assertUnreachable(command);
+  }
+};
+
+client.on("message", (message) => {
+  if (!message.author.bot) {
+    const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
+
+    switch (decodedCommand._tag) {
+      case "Right": {
+        handleCommand(decodedCommand.right, message);
+
+        break;
+      }
+
+      case "Left": {
+        console.error("Unable to decode message:", reporter.report(decodedCommand));
+
+        break;
+      }
+
+      default:
+        assertUnreachable(decodedCommand);
+    }
+  }
+});
+
+client.login("MzY4NzU5MDI3MTU4NDgyOTQ0.XxBC6Q.0mJKrCoEomFiZNLg9FJMC_4AJJE");
+
+const handlePersonCommand = async (
+  command: commands.PersonCommand,
+  message: Discord.Message
+): Promise<void> => {
+  const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.name);
+
+  switch (maybePeople._tag) {
+    case "Right": {
+      if (maybePeople.right.length > 0) {
+        const person = maybePeople.right[0];
+
+        const posterUrl =
+          person.profile_path !== null
+            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
+            : "";
+
+        const embed = new Discord.MessageEmbed({
+          title: person.name,
+          image: { url: posterUrl },
+          footer: {
+            text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
+          },
+        });
+
+        person.known_for.forEach((media) => {
+          const title = media.media_type === "movie" ? media.title ?? "N/A" : media.name ?? "N/A";
+          const releaseDate =
+            media.media_type === "movie"
+              ? media.release_date ?? "N/A"
+              : media.first_air_date ?? "N/A";
+          embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
+        });
+
+        message.reply(embed);
+      } else {
+        message.reply(`No results returned for '${command.name}'.`);
+      }
+
+      break;
+    }
+
+    case "Left": {
+      console.error("error:", reporter.report(maybePeople).join(" "));
+
+      break;
+    }
+
+    default:
+      assertUnreachable(maybePeople);
+  }
+};
+
 export const handleMovieCommand = async (
   command: commands.MovieCommand,
   message: Discord.Message
