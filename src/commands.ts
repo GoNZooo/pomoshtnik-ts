@@ -12,6 +12,7 @@ export const ShowCommand = t.type({ type: t.literal("!show"), name: t.string });
 export type ShowCommand = t.TypeOf<typeof ShowCommand>;
 
 export const ISBNCommand = t.type({ type: t.literal("!isbn"), isbn: t.string });
+export type ISBNCommand = t.TypeOf<typeof ISBNCommand>;
 
 export const PingCommand = t.type({ type: t.literal("!ping") });
 
