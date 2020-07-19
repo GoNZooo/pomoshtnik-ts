@@ -114,12 +114,12 @@ const handleCommand = async (
                   title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
                   image: { url: posterUrl },
                 });
-                const castEntries = movie.credits.cast.map((castEntry) => {
-                  return `**${castEntry.name}** as ${castEntry.character}`;
-                });
+                const castEntries = movie.credits.cast
+                  // tslint:disable-next-line: no-magic-numbers
+                  .slice(0, 25)
+                  .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
                 embed.addField("Description", movie.overview);
-                // tslint:disable-next-line: no-magic-numbers
-                embed.addField("Cast", castEntries.slice(0, 25).join("\n"));
+                embed.addField("Cast", castEntries.join("\n"));
                 message.reply(embed);
 
                 break;
@@ -186,10 +186,10 @@ const handleCommand = async (
                 });
                 embed.addField("Description", show.overview);
                 embed.addField("Last Episode", lastEpisodeDescription);
-                // tslint:disable-next-line: no-magic-numbers
-                const castEntries = show.credits.cast.slice(0, 25).map((castEntry) => {
-                  return `**${castEntry.name}** as ${castEntry.character}`;
-                });
+                const castEntries = show.credits.cast
+                  // tslint:disable-next-line: no-magic-numbers
+                  .slice(0, 25)
+                  .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
                 embed.addField("Cast", castEntries.join("\n"));
 
                 message.reply(embed);
