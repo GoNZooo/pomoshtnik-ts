@@ -186,8 +186,7 @@ export const handleMovieCommand = async (
             });
 
             const castEntries = movie.credits.cast
-              // tslint:disable-next-line: no-magic-numbers
-              .slice(0, 25)
+              .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));
@@ -268,8 +267,7 @@ export const handleShowCommand = async (
             embed.addField("Last Episode", lastEpisodeDescription);
 
             const castEntries = show.credits.cast
-              // tslint:disable-next-line: no-magic-numbers
-              .slice(0, 25)
+              .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
             embed.addField("Cast", castEntries.join("\n"));
 
@@ -340,3 +338,5 @@ export const handleISBNCommand = async (
       assertUnreachable(maybeBook);
   }
 };
+
+const MAX_EMBED_CAST_ENTRIES = 25;
