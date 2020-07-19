@@ -9,6 +9,7 @@ export const PersonCommand = t.type({ type: t.literal("!person"), name: t.string
 export type PersonCommand = t.TypeOf<typeof PersonCommand>;
 
 export const ShowCommand = t.type({ type: t.literal("!show"), name: t.string });
+export type ShowCommand = t.TypeOf<typeof ShowCommand>;
 
 export const ISBNCommand = t.type({ type: t.literal("!isbn"), isbn: t.string });
 

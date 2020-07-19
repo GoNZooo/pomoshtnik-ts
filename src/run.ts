@@ -64,6 +64,12 @@ const handleCommand = async (
       return;
     }
 
+    case "!show": {
+      handleShowCommand(command, message);
+
+      return;
+    }
+
 export const handleMovieCommand = async (
   command: commands.MovieCommand,
   message: Discord.Message
@@ -129,79 +135,86 @@ export const handleMovieCommand = async (
   }
 };
 
-      return;
-    }
+export const handleShowCommand = async (
+  command: commands.ShowCommand,
+  message: Discord.Message
+): Promise<void> => {
+  const maybeShows = await tmdb.searchShow(tmdbApiKey, command.name);
 
-    case "!show": {
-      const maybeShows = await tmdb.searchShow(tmdbApiKey, command.name);
-      switch (maybeShows._tag) {
-        case "Right": {
-          if (maybeShows.right.length > 0) {
-            const showCandidate = maybeShows.right[0];
-            const posterUrl =
-              showCandidate.poster_path !== null
-                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${showCandidate.poster_path}`
-                : "";
-            const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
-            switch (maybeShow._tag) {
-              case "Right": {
-                const show = maybeShow.right;
-                const lastEpisode = show.last_episode_to_air;
-                const lastEpisodeDescription =
-                  lastEpisode !== null
-                    ? [
-                        `**${lastEpisode?.name}** (S${lastEpisode?.season_number
-                          .toFixed(0)
-                          .padStart(2, "0")}E${lastEpisode?.episode_number
-                          .toFixed(0)
-                          .padStart(2, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
-                        `${lastEpisode?.overview ?? "N/A"}`,
-                      ].join("\n")
-                    : "N/A";
-                const embed = new Discord.MessageEmbed({
-                  title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
-                  image: { url: posterUrl },
-                });
-                embed.addField("Description", show.overview);
-                embed.addField("Last Episode", lastEpisodeDescription);
-                const castEntries = show.credits.cast
-                  // tslint:disable-next-line: no-magic-numbers
-                  .slice(0, 25)
-                  .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
-                embed.addField("Cast", castEntries.join("\n"));
+  switch (maybeShows._tag) {
+    case "Right": {
+      if (maybeShows.right.length > 0) {
+        const showCandidate = maybeShows.right[0];
 
-                message.reply(embed);
+        const posterUrl =
+          showCandidate.poster_path !== null
+            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${showCandidate.poster_path}`
+            : "";
 
-                break;
-              }
+        const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
 
-              case "Left": {
-                console.error(`Unable to get credits: ${reporter.report(maybeShow)}`);
+        switch (maybeShow._tag) {
+          case "Right": {
+            const show = maybeShow.right;
 
-                break;
-              }
+            const lastEpisode = show.last_episode_to_air;
 
-              default:
-                assertUnreachable(maybeShow);
-            }
+            const lastEpisodeDescription =
+              lastEpisode !== null
+                ? [
+                    `**${lastEpisode?.name}** (S${lastEpisode?.season_number
+                      .toFixed(0)
+                      .padStart(2, "0")}E${lastEpisode?.episode_number
+                      .toFixed(0)
+                      .padStart(2, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
+                    `${lastEpisode?.overview ?? "N/A"}`,
+                  ].join("\n")
+                : "N/A";
+
+            const embed = new Discord.MessageEmbed({
+              title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
+              image: { url: posterUrl },
+            });
+
+            embed.addField("Description", show.overview);
+            embed.addField("Last Episode", lastEpisodeDescription);
+
+            const castEntries = show.credits.cast
+              // tslint:disable-next-line: no-magic-numbers
+              .slice(0, 25)
+              .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+            embed.addField("Cast", castEntries.join("\n"));
+
+            message.reply(embed);
 
             break;
           }
-          break;
+
+          case "Left": {
+            console.error(`Unable to get credits: ${reporter.report(maybeShow)}`);
+
+            break;
+          }
+
+          default:
+            assertUnreachable(maybeShow);
         }
 
-        case "Left": {
-          console.error("error:", reporter.report(maybeShows).join("\n"));
-
-          break;
-        }
-
-        default:
-          assertUnreachable(maybeShows);
+        break;
       }
-
-      return;
+      break;
     }
+
+    case "Left": {
+      console.error("error:", reporter.report(maybeShows).join("\n"));
+
+      break;
+    }
+
+    default:
+      assertUnreachable(maybeShows);
+  }
+};
 
     case "!isbn": {
       const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.isbn);
