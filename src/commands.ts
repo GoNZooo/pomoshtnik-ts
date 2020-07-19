@@ -3,6 +3,7 @@ import { either } from "fp-ts/lib/Either";
 import { assertUnreachable } from "./utilities";
 
 export const MovieCommand = t.type({ type: t.literal("!movie"), name: t.string });
+export type MovieCommand = t.TypeOf<typeof MovieCommand>;
 
 export const PersonCommand = t.type({ type: t.literal("!person"), name: t.string });
 export type PersonCommand = t.TypeOf<typeof PersonCommand>;

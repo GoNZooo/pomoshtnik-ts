@@ -59,59 +59,75 @@ const handleCommand = async (
     }
 
     case "!movie": {
-      const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.name);
-      switch (maybeMovies._tag) {
-        case "Right": {
-          if (maybeMovies.right.length > 0) {
-            const movieCandidate = maybeMovies.right[0];
-            const posterUrl =
-              movieCandidate.poster_path !== null
-                ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
-                : "";
-            const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
-            switch (maybeMovie._tag) {
-              case "Right": {
-                const movie = maybeMovie.right;
-                const embed = new Discord.MessageEmbed({
-                  title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
-                  image: { url: posterUrl },
-                });
-                const castEntries = movie.credits.cast
-                  // tslint:disable-next-line: no-magic-numbers
-                  .slice(0, 25)
-                  .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
-                embed.addField("Description", movie.overview);
-                embed.addField("Cast", castEntries.join("\n"));
-                message.reply(embed);
+      handleMovieCommand(command, message);
 
-                break;
-              }
+      return;
+    }
 
-              case "Left": {
-                console.error(reporter.report(maybeMovie));
+export const handleMovieCommand = async (
+  command: commands.MovieCommand,
+  message: Discord.Message
+): Promise<void> => {
+  const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.name);
 
-                break;
-              }
+  switch (maybeMovies._tag) {
+    case "Right": {
+      if (maybeMovies.right.length > 0) {
+        const movieCandidate = maybeMovies.right[0];
 
-              default:
-                assertUnreachable(maybeMovie);
-            }
-          } else {
-            message.reply(`No results returned for '${command.name}'.`);
+        const posterUrl =
+          movieCandidate.poster_path !== null
+            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
+            : "";
+
+        const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
+
+        switch (maybeMovie._tag) {
+          case "Right": {
+            const movie = maybeMovie.right;
+
+            const embed = new Discord.MessageEmbed({
+              title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
+              image: { url: posterUrl },
+            });
+
+            const castEntries = movie.credits.cast
+              // tslint:disable-next-line: no-magic-numbers
+              .slice(0, 25)
+              .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+            embed.addField("Description", movie.overview);
+            embed.addField("Cast", castEntries.join("\n"));
+            message.reply(embed);
+
+            break;
           }
 
-          break;
+          case "Left": {
+            console.error(reporter.report(maybeMovie));
+
+            break;
+          }
+
+          default:
+            assertUnreachable(maybeMovie);
         }
-
-        case "Left": {
-          console.error("error:", reporter.report(maybeMovies).join("\n"));
-
-          break;
-        }
-
-        default:
-          assertUnreachable(maybeMovies);
+      } else {
+        message.reply(`No results returned for '${command.name}'.`);
       }
+
+      break;
+    }
+
+    case "Left": {
+      console.error("error:", reporter.report(maybeMovies).join("\n"));
+
+      break;
+    }
+
+    default:
+      assertUnreachable(maybeMovies);
+  }
+};
 
       return;
     }
