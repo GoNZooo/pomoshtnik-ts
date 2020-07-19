@@ -21,8 +21,7 @@ export type Book = t.TypeOf<typeof Book>;
 
 export const getBookByISBN = async (key: string, isbn: string): Promise<Either<t.Errors, Book>> => {
   const response = await fetch(`${baseUrl}book/${isbn}`, { headers: { Authorization: key } });
-  const json = await response.json();
-  console.log(json.book);
+  const json = (await response.json()) as { book: unknown };
 
   return Book.decode(json.book);
 };
