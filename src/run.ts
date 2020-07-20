@@ -132,10 +132,12 @@ const handlePersonCommand = async (
 
         person.known_for.forEach((media) => {
           const title = media.media_type === "movie" ? media.title ?? "N/A" : media.name ?? "N/A";
+
           const releaseDate =
             media.media_type === "movie"
               ? media.release_date ?? "N/A"
               : media.first_air_date ?? "N/A";
+
           embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
         });
 
@@ -188,6 +190,7 @@ export const handleMovieCommand = async (
             const castEntries = movie.credits.cast
               .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));
             message.reply(embed);
@@ -269,8 +272,8 @@ export const handleShowCommand = async (
             const castEntries = show.credits.cast
               .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
-            embed.addField("Cast", castEntries.join("\n"));
 
+            embed.addField("Cast", castEntries.join("\n"));
             message.reply(embed);
 
             break;
@@ -325,6 +328,7 @@ export const handleISBNCommand = async (
       embed.addField("ISBN", `${book.isbn} & ${book.isbn13}`);
 
       message.reply(embed);
+
       break;
     }
 
