@@ -9,6 +9,9 @@ import * as isbndb from "./isbndb";
 
 dotenv.config();
 
+const discordApiKey = process.env.DISCORD_API_KEY ?? "NOVALUE";
+if (discordApiKey === "NOVALUE") throw new Error("No Discord API key specified.");
+
 const tmdbApiKey = process.env.TMDB_API_KEY ?? "NOVALUE";
 if (tmdbApiKey === "NOVALUE") throw new Error("No TMDB API key specified.");
 
@@ -104,7 +107,7 @@ client.on("message", (message) => {
   }
 });
 
-client.login("MzY4NzU5MDI3MTU4NDgyOTQ0.XxBC6Q.0mJKrCoEomFiZNLg9FJMC_4AJJE");
+client.login(discordApiKey);
 
 const handlePersonCommand = async (
   command: commands.PersonCommand,
