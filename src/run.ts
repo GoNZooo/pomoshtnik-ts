@@ -393,8 +393,9 @@ const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookCli
     }
 
     case "push": {
-      const commitLines = event.commits.map((c) => `${c.id}: ${c.message}`).join("\n");
-      const description = `${event.sender.login} pushed to a repository: ${event.repository.name}`;
+      const commitLines = event.commits.map((c) => `[${c.id}: ${c.message}](${c.url})`).join("\n");
+      const refName = event.ref.split("/")[2];
+      const description = `${event.sender.login} pushed to a repository: ${event.repository.name}/${refName}`;
       const fields = [{ name: "commits", value: commitLines }];
       const embed = new Discord.MessageEmbed({ description, fields });
 
