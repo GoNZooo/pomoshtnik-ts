@@ -18,6 +18,9 @@ if (tmdbApiKey === "NOVALUE") throw new Error("No TMDB API key specified.");
 const isbndbApiKey = process.env.ISBNDB_KEY ?? "NOVALUE";
 if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.");
 
+const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "NOVALUE";
+if (githubWebhookSecret === "NOVALUE") throw new Error("No GitHub webhook secret specified.");
+
 const client = new Discord.Client();
 
 let tmdbImageBaseUrl: string;
