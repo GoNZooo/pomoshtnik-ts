@@ -25,16 +25,19 @@ if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.")
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "NOVALUE";
 if (githubWebhookSecret === "NOVALUE") throw new Error("No GitHub webhook secret specified.");
 
+const githubWebhookId = process.env.GITHUB_WEBHOOK_ID ?? "NOVALUE";
+if (githubWebhookId === "NOVALUE") throw new Error("No GitHub webhook ID specified.");
+
+const githubWebhookToken = process.env.GITHUB_WEBHOOK_TOKEN ?? "NOVALUE";
+if (githubWebhookToken === "NOVALUE") throw new Error("No GitHub webhook token specified.");
+
 const applicationPort = Number(process.env.PORT ?? DEFAULT_APPLICATION_PORT);
 
 const application = express();
 
 const discordClient = new Discord.Client();
 
-const discordWebhook = new Discord.WebhookClient(
-  "734780552825012285",
-  "6Uu4KOBcLh4lD409vHCfxSRZLKzseQaY4uzER-upRWUbP0UqdQapqpny7JVJMq6DqKk0"
-);
+const discordWebhook = new Discord.WebhookClient(githubWebhookId, githubWebhookToken);
 
 application.use(express.json());
 
