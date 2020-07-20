@@ -392,6 +392,17 @@ const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookCli
       break;
     }
 
+    case "push": {
+      const commitLines = event.commits.map((c) => `${c.id}: ${c.message}`).join("\n");
+      const description = `${event.sender.login} pushed to a repository: ${event.repository.name}`;
+      const fields = [{ name: "commits", value: commitLines }];
+      const embed = new Discord.MessageEmbed({ description, fields });
+
+      hook.send(embed);
+
+      break;
+    }
+
     case "UnknownAction": {
       console.error("Unknown event:", event);
       break;

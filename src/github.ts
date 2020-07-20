@@ -21,7 +21,7 @@ export const Repository = t.type({
   full_name: t.string,
   private: t.boolean,
   fork: t.boolean,
-  created_at: t.string,
+  created_at: t.number,
   updated_at: t.string,
   description: t.union([t.null, t.string]),
   owner: Owner,
@@ -65,9 +65,49 @@ export const RepositoryCreated = t.type({
 
 export type RepositoryCreated = t.TypeOf<typeof RepositoryCreated>;
 
+export const Pusher = t.type({ name: t.string, email: t.string });
+export type Pusher = t.TypeOf<typeof Pusher>;
+
+export const Author = t.type({ name: t.string, email: t.string, username: t.string });
+export type Author = t.TypeOf<typeof Author>;
+
+export const Commit = t.type({
+  id: t.string,
+  tree_id: t.string,
+  distinct: t.boolean,
+  message: t.string,
+  timestamp: t.string,
+  url: t.string,
+  author: Author,
+  committer: Author,
+  added: t.array(t.string),
+  removed: t.array(t.string),
+  modified: t.array(t.string),
+});
+export type Commit = t.TypeOf<typeof Commit>;
+
+export const PushedToRepository = t.type({
+  action: t.literal("push"),
+  repository: Repository,
+  ref: t.string,
+  before: t.string,
+  after: t.string,
+  pusher: Pusher,
+  organization: Organization,
+  sender: Sender,
+  created: t.boolean,
+  deleted: t.boolean,
+  forced: t.boolean,
+  compare: t.string,
+  commits: t.array(Commit),
+  head_commit: Commit,
+});
+
+export type PushedToRepository = t.TypeOf<typeof PushedToRepository>;
+
 export const UnknownEvent = t.type({ action: t.literal("UnknownAction") });
 
-export const WebhookEvent = t.union([RepositoryCreated, UnknownEvent]);
+export const WebhookEvent = t.union([RepositoryCreated, PushedToRepository, UnknownEvent]);
 
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
 
@@ -85,9 +125,15 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     if (RequestData.is(u)) {
       switch (u.event) {
         case "repository": {
-          console.log("got repository event");
-
           return RepositoryCreated.decode(u.body);
+        }
+
+        case "push": {
+          if (typeof u.body === "object") {
+            return PushedToRepository.decode({ ...u.body, action: "push" });
+          } else {
+            return left([]);
+          }
         }
 
         case "UnknownEvent": {
