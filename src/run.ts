@@ -17,7 +17,7 @@ if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.")
 
 const client = new Discord.Client();
 
-let imageBaseUrl: string;
+let tmdbImageBaseUrl: string;
 
 client.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
@@ -25,7 +25,7 @@ client.on("ready", async () => {
   console.error(reporter.report(configurationResponse));
 
   if (either.isRight(configurationResponse)) {
-    imageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
+    tmdbImageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
   }
 
   console.log(`Logged in as: ${client.user?.tag ?? "N/A"}!`);
@@ -119,7 +119,7 @@ const handlePersonCommand = async (
 
         const posterUrl =
           person.profile_path !== null
-            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
+            ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
             : "";
 
         const embed = new Discord.MessageEmbed({
@@ -173,7 +173,7 @@ export const handleMovieCommand = async (
 
         const posterUrl =
           movieCandidate.poster_path !== null
-            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
+            ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
             : "";
 
         const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
@@ -238,7 +238,7 @@ export const handleShowCommand = async (
 
         const posterUrl =
           showCandidate.poster_path !== null
-            ? `${imageBaseUrl}${tmdb.preferredProfileSize}${showCandidate.poster_path}`
+            ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${showCandidate.poster_path}`
             : "";
 
         const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
