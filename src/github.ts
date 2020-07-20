@@ -107,8 +107,9 @@ export type PushedToRepository = t.TypeOf<typeof PushedToRepository>;
 
 export const UnknownEvent = t.type({ action: t.literal("UnknownAction") });
 
+// @TODO: add `PullRequestOpened`
+// @TODO: maybe `PullRequestAssigned` too ,  or `PullRequestReviewRequested` instead
 export const WebhookEvent = t.union([RepositoryCreated, PushedToRepository, UnknownEvent]);
-
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
 
 export const RequestData = t.type({
