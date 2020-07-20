@@ -397,7 +397,7 @@ const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookCli
 
     case "push": {
       const commitLines = event.commits
-        .map((c) => `[${c.id}: ${c.message}](${c.url})`)
+        .map((c) => `# $[{c.id}](${c.url})\n${c.message}`)
         .join("\n---\n");
       const refName = event.ref.split("/")[2];
       const description = `${event.sender.login} pushed to a repository: ${event.repository.name}/${refName}`;
