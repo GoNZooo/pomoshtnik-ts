@@ -6,8 +6,9 @@ It can talk to TMDB for movie & TV queries as well as ISBNDB for book data.
 
 ## Required environment variables
 
-A file called `.env` with the following keys is required, or some other way of
-setting these variables (in Heroku or the like this could be done via settings):
+A file called `.env` being put in the root directory of the project with the
+following keys in it will result in these automatically being read into the
+app. You may also set them manually:
 
 ```env
 DISCORD_API_KEY="DiscordAPIKEYHERE"
