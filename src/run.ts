@@ -385,9 +385,9 @@ export const handleISBNCommand = async (
 const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookClient): void => {
   switch (event.action) {
     case "created": {
-      console.log("Got repository created:", event);
-      // @TODO: make this an embed with nice stuff
-      hook.send(`${event.sender.login} created a repository: ${event.repository.name}`);
+      const description = `${event.sender.login} created a repository: ${event.repository.name}`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
 
       break;
     }
