@@ -25,7 +25,7 @@ client.on("ready", async () => {
   console.error(reporter.report(configurationResponse));
 
   if (either.isRight(configurationResponse)) {
-    imageBaseUrl = `${configurationResponse.right.images.base_url}`;
+    imageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
   }
 
   console.log(`Logged in as: ${client.user?.tag ?? "N/A"}!`);
