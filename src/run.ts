@@ -346,4 +346,4 @@ export const handleISBNCommand = async (
   }
 };
 
-const MAX_EMBED_CAST_ENTRIES = 25;
+const MAX_EMBED_CAST_ENTRIES = 20;
