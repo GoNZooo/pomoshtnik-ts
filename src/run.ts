@@ -6,6 +6,10 @@ import * as commands from "./commands";
 import { assertUnreachable } from "./utilities";
 import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
+import express from "express";
+import * as github from "./github";
+
+const DEFAULT_APPLICATION_PORT = 3000;
 
 dotenv.config();
 
@@ -21,11 +25,43 @@ if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.")
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "NOVALUE";
 if (githubWebhookSecret === "NOVALUE") throw new Error("No GitHub webhook secret specified.");
 
-const client = new Discord.Client();
+const githubWebhookId = process.env.GITHUB_WEBHOOK_ID ?? "NOVALUE";
+if (githubWebhookId === "NOVALUE") throw new Error("No GitHub webhook ID specified.");
+
+const githubWebhookToken = process.env.GITHUB_WEBHOOK_TOKEN ?? "NOVALUE";
+if (githubWebhookToken === "NOVALUE") throw new Error("No GitHub webhook token specified.");
+
+const applicationPort = Number(process.env.PORT ?? DEFAULT_APPLICATION_PORT);
+
+const application = express();
+
+const discordClient = new Discord.Client();
+
+const discordWebhook = new Discord.WebhookClient(githubWebhookId, githubWebhookToken);
+
+application.use(express.json());
+
+application.post("/github-webhook", (request, response) => {
+  const requestData = {
+    event: request.header("x-github-event") ?? "UnknownEvent",
+    body: request.body,
+  };
+  const decodedEvent = github.WebhookEventFromRequestData.decode(requestData);
+
+  if (decodedEvent._tag === "Right") {
+    handleWebhookEvent(decodedEvent.right, discordWebhook);
+  } else {
+    console.error(`Undecodable event: ${reporter.report(decodedEvent)}`);
+  }
+
+  response.sendStatus(OK_STATUS);
+});
+
+application.listen(applicationPort);
 
 let tmdbImageBaseUrl: string;
 
-client.on("ready", async () => {
+discordClient.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
 
   console.error(reporter.report(configurationResponse));
@@ -34,7 +70,7 @@ client.on("ready", async () => {
     tmdbImageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
   }
 
-  console.log(`Logged in as: ${client.user?.tag ?? "N/A"}!`);
+  console.log(`Logged in as: ${discordClient.user?.tag ?? "N/A"}!`);
 });
 
 const handleCommand = async (
@@ -87,7 +123,7 @@ const handleCommand = async (
   }
 };
 
-client.on("message", (message) => {
+discordClient.on("message", (message) => {
   if (!message.author.bot) {
     const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
 
@@ -110,7 +146,7 @@ client.on("message", (message) => {
   }
 });
 
-client.login(discordApiKey);
+discordClient.login(discordApiKey);
 
 const handlePersonCommand = async (
   command: commands.PersonCommand,
@@ -349,4 +385,40 @@ export const handleISBNCommand = async (
   }
 };
 
+const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookClient): void => {
+  switch (event.action) {
+    case "created": {
+      const description = `${event.sender.login} created a repository: ${event.repository.name}`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
+    case "push": {
+      const commitLines = event.commits
+        .map((c) => `[${c.id}](${c.url})\n**${c.message}**`)
+        .join("\n---\n");
+      const refName = event.ref.split("/")[2];
+      const description = `${event.sender.login} pushed to a repository: ${event.repository.name}/${refName}`;
+      const fields = [{ name: "Commits", value: commitLines }];
+      const embed = new Discord.MessageEmbed({ description, fields });
+
+      hook.send(embed);
+
+      break;
+    }
+
+    case "UnknownAction": {
+      console.error("Unknown event:", event);
+      break;
+    }
+
+    default:
+      assertUnreachable(event);
+  }
+};
+
 const MAX_EMBED_CAST_ENTRIES = 20;
+
+const OK_STATUS = 200;
