@@ -133,7 +133,13 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
           if (typeof u.body === "object") {
             return PushedToRepository.decode({ ...u.body, action: "push" });
           } else {
-            return left([]);
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
           }
         }
 
@@ -142,7 +148,13 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
         }
 
         default:
-          return left([]);
+          return left([
+            {
+              value: u.event,
+              context: c,
+              message: "expecting 'repository', 'push', 'UnknownEvent' as event type",
+            },
+          ]);
       }
     } else {
       return t.failure(u, c);

@@ -397,14 +397,15 @@ const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookCli
 
     case "push": {
       const commitLines = event.commits
-        .map((c) => `[${c.id}](${c.url})\n**${c.message}**`)
+        .reverse()
+        .slice(0, MAX_COMMITS_DESCRIPTION)
+        .map((c) => `[${c.id}](${c.url})\n**${truncateCommitMessage(c.message)}**`)
         .join("\n---\n");
       const refName = event.ref.split("/")[2];
-      const description = `${event.sender.login} pushed to a repository: ${event.repository.name}/${refName}`;
-      const fields = [{ name: "Commits", value: commitLines }];
-      const embed = new Discord.MessageEmbed({ description, fields });
+      const description = `${event.sender.login} pushed to a repository: [${event.repository.name}/${refName}](${event.head_commit.url})`;
+      const content = [description, commitLines].join("\n");
 
-      hook.send(embed);
+      hook.send(content);
 
       break;
     }
@@ -419,6 +420,20 @@ const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookCli
   }
 };
 
+const truncateCommitMessage = (message: string): string => {
+  return truncateString(message.split("\n")[0], MAX_COMMIT_MESSAGE_LENGTH);
+};
+
+const truncateString = (stringToTruncate: string, length: number): string => {
+  return stringToTruncate.length >= length
+    ? stringToTruncate.substring(0, length - 3) + "..."
+    : stringToTruncate;
+};
+
 const MAX_EMBED_CAST_ENTRIES = 20;
+
+const MAX_COMMITS_DESCRIPTION = 8;
+
+const MAX_COMMIT_MESSAGE_LENGTH = 60;
 
 const OK_STATUS = 200;
