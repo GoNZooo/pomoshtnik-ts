@@ -1,6 +1,5 @@
 import * as t from "io-ts";
-import { Request } from "express";
-import { left, either } from "fp-ts/lib/Either";
+import { left } from "fp-ts/lib/Either";
 
 export const Owner = t.type({
   id: t.number,
@@ -21,7 +20,7 @@ export const Repository = t.type({
   full_name: t.string,
   private: t.boolean,
   fork: t.boolean,
-  created_at: t.string,
+  created_at: t.union([t.number, t.string]),
   updated_at: t.string,
   description: t.union([t.null, t.string]),
   owner: Owner,
