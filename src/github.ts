@@ -1,6 +1,5 @@
 import * as t from "io-ts";
-import { Request } from "express";
-import { left, either } from "fp-ts/lib/Either";
+import { left } from "fp-ts/lib/Either";
 
 export const Owner = t.type({
   id: t.number,
@@ -21,15 +20,17 @@ export const Repository = t.type({
   full_name: t.string,
   private: t.boolean,
   fork: t.boolean,
-  created_at: t.number,
+  created_at: t.union([t.number, t.string]),
   updated_at: t.string,
   description: t.union([t.null, t.string]),
   owner: Owner,
+  url: t.string,
+  html_url: t.string,
 });
 
 export type Repository = t.TypeOf<typeof Repository>;
 
-export const Sender = t.type({
+export const User = t.type({
   login: t.string,
   id: t.number,
   avatar_url: t.string,
@@ -41,6 +42,10 @@ export const Sender = t.type({
   type: t.string,
   site_admin: t.boolean,
 });
+
+export type User = t.TypeOf<typeof User>;
+
+export const Sender = User;
 
 export type Sender = t.TypeOf<typeof Sender>;
 
@@ -57,6 +62,7 @@ export const Organization = t.type({
 export type Organization = t.TypeOf<typeof Organization>;
 
 export const RepositoryCreated = t.type({
+  event_type: t.literal("RepositoryCreated"),
   action: t.literal("created"),
   repository: Repository,
   organization: Organization,
@@ -87,6 +93,7 @@ export const Commit = t.type({
 export type Commit = t.TypeOf<typeof Commit>;
 
 export const PushedToRepository = t.type({
+  event_type: t.literal("PushedToRepository"),
   action: t.literal("push"),
   repository: Repository,
   ref: t.string,
@@ -105,11 +112,89 @@ export const PushedToRepository = t.type({
 
 export type PushedToRepository = t.TypeOf<typeof PushedToRepository>;
 
-export const UnknownEvent = t.type({ action: t.literal("UnknownAction") });
+export const Label = t.type({
+  id: t.number,
+  url: t.string,
+  name: t.string,
+  color: t.string,
+  default: t.boolean,
+  description: t.string,
+});
+
+export const Issue = t.type({
+  id: t.number,
+  url: t.string,
+  repository_url: t.string,
+  number: t.number,
+  title: t.string,
+  user: User,
+  labels: t.array(Label),
+  state: t.string,
+  locked: t.boolean,
+  assignee: t.union([t.null, User]),
+  assignees: t.array(User),
+  comments: t.number,
+  created_at: t.string,
+  updated_at: t.string,
+  closed_at: t.union([t.null, t.string]),
+  author_association: t.string,
+  body: t.string,
+});
+
+export const IssueOpened = t.type({
+  event_type: t.literal("IssueOpened"),
+  action: t.literal("opened"),
+  issue: Issue,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type IssueOpened = t.TypeOf<typeof IssueOpened>;
+
+export const PullRequest = t.type({
+  id: t.number,
+  url: t.string,
+  number: t.number,
+  state: t.string,
+  locked: t.boolean,
+  title: t.string,
+  user: User,
+  body: t.string,
+  created_at: t.string,
+  updated_at: t.string,
+  assignee: User,
+  assignees: t.array(User),
+  labels: t.array(Label),
+  draft: t.boolean,
+});
+
+export const PullRequestOpened = t.type({
+  event_type: t.literal("PullRequestOpened"),
+  action: t.literal("opened"),
+  number: t.number,
+  pull_request: PullRequest,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type PullRequestOpened = t.TypeOf<typeof PullRequestOpened>;
+
+export const UnknownEvent = t.type({
+  event_type: t.literal("UnknownEvent"),
+  action: t.literal("UnknownAction"),
+});
 
 // @TODO: add `PullRequestOpened`
 // @TODO: maybe `PullRequestAssigned` too ,  or `PullRequestReviewRequested` instead
-export const WebhookEvent = t.union([RepositoryCreated, PushedToRepository, UnknownEvent]);
+export const WebhookEvent = t.union([
+  RepositoryCreated,
+  PushedToRepository,
+  IssueOpened,
+  PullRequestOpened,
+  UnknownEvent,
+]);
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
 
 export const RequestData = t.type({
@@ -126,23 +211,82 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     if (RequestData.is(u)) {
       switch (u.event) {
         case "repository": {
-          return RepositoryCreated.decode(u.body);
+          if (t.UnknownRecord.is(u.body)) {
+            return RepositoryCreated.decode({ ...u.body, event_type: "RepositoryCreated" });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
         }
 
         case "push": {
-          if (typeof u.body === "object") {
-            return PushedToRepository.decode({ ...u.body, action: "push" });
+          if (t.UnknownRecord.is(u.body)) {
+            return PushedToRepository.decode({
+              ...u.body,
+              event_type: "PushedToRepository",
+              action: "push",
+            });
           } else {
-            return left([]);
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
+        }
+
+        case "issues": {
+          if (t.UnknownRecord.is(u.body)) {
+            const eventType = u.body.action === "opened" ? "IssueOpened" : "IssueClosed";
+
+            return IssueOpened.decode({ event_type: eventType, ...u.body });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
+        }
+
+        case "pull_request": {
+          if (t.UnknownRecord.is(u.body)) {
+            const eventType =
+              u.body.action === "opened" ? "PullRequestOpened" : "PullRequestMerged";
+
+            return PullRequestOpened.decode({ event_type: eventType, ...u.body });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
           }
         }
 
         case "UnknownEvent": {
-          return t.success({ action: "UnknownAction" });
+          return t.success({ event_type: "UnknownEvent", action: "UnknownAction" });
         }
 
         default:
-          return left([]);
+          return left([
+            {
+              value: u.event,
+              context: c,
+              message: "expecting 'repository', 'push', 'UnknownEvent' as event type",
+            },
+          ]);
       }
     } else {
       return t.failure(u, c);
@@ -152,7 +296,3 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     return { event: "repository", body: JSON.stringify(rc) };
   }
 );
-
-interface EventDecoders<P extends t.Props> {
-  [key: string]: t.TypeC<P>;
-}
