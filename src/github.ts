@@ -164,7 +164,3 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     return { event: "repository", body: JSON.stringify(rc) };
   }
 );
-
-interface EventDecoders<P extends t.Props> {
-  [key: string]: t.TypeC<P>;
-}
