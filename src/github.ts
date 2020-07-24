@@ -181,6 +181,33 @@ export const PullRequestOpened = t.type({
 
 export type PullRequestOpened = t.TypeOf<typeof PullRequestOpened>;
 
+export const PullRequestMerged = t.type({
+  event_type: t.literal("PullRequestMerged"),
+  action: t.literal("merged"),
+  number: t.number,
+  pull_request: PullRequest,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type PullRequestMerged = t.TypeOf<typeof PullRequestMerged>;
+
+export const PullRequestClosed = t.type({
+  event_type: t.literal("PullRequestClosed"),
+  action: t.literal("closed"),
+  number: t.number,
+  pull_request: PullRequest,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type PullRequestClosed = t.TypeOf<typeof PullRequestClosed>;
+
+export const PullRequestEvent = t.union([PullRequestOpened, PullRequestMerged, PullRequestClosed]);
+export type PullRequestEvent = t.TypeOf<typeof PullRequestEvent>;
+
 export const UnknownEvent = t.type({
   event_type: t.literal("UnknownEvent"),
   action: t.literal("UnknownAction"),
@@ -192,7 +219,7 @@ export const WebhookEvent = t.union([
   RepositoryCreated,
   PushedToRepository,
   IssueOpened,
-  PullRequestOpened,
+  PullRequestEvent,
   UnknownEvent,
 ]);
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
@@ -260,10 +287,9 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
 
         case "pull_request": {
           if (t.UnknownRecord.is(u.body)) {
-            const eventType =
-              u.body.action === "opened" ? "PullRequestOpened" : "PullRequestMerged";
+            const eventType = getPullRequestEventType(u.body);
 
-            return PullRequestOpened.decode({ event_type: eventType, ...u.body });
+            return PullRequestEvent.decode({ event_type: eventType, ...u.body });
           } else {
             return left([
               {
@@ -296,3 +322,16 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     return { event: "repository", body: JSON.stringify(rc) };
   }
 );
+
+const getPullRequestEventType = (body: { [key: string]: unknown }): string => {
+  switch (body.action) {
+    case "opened":
+      return "PullRequestOpened";
+    case "merged":
+      return "PullRequestMerged";
+    case "closed":
+      return "PullRequestClosed";
+    default:
+      return "UnknownEvent";
+  }
+};

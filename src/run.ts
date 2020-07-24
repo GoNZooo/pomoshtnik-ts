@@ -429,6 +429,22 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
+    case "PullRequestMerged": {
+      const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
+    case "PullRequestClosed": {
+      const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
     case "UnknownEvent": {
       console.error("Unknown event:", event);
       break;
