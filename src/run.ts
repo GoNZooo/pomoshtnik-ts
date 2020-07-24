@@ -413,6 +413,14 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
+    case "opened": {
+      const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.url})`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
     case "UnknownAction": {
       console.error("Unknown event:", event);
       break;
