@@ -181,6 +181,18 @@ export const PullRequestOpened = t.type({
 
 export type PullRequestOpened = t.TypeOf<typeof PullRequestOpened>;
 
+export const PullRequestMerged = t.type({
+  event_type: t.literal("PullRequestMerged"),
+  action: t.literal("closed"),
+  number: t.number,
+  pull_request: PullRequest,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type PullRequestMerged = t.TypeOf<typeof PullRequestMerged>;
+
 export const UnknownEvent = t.type({
   event_type: t.literal("UnknownEvent"),
   action: t.literal("UnknownAction"),
@@ -193,6 +205,7 @@ export const WebhookEvent = t.union([
   PushedToRepository,
   IssueOpened,
   PullRequestOpened,
+  PullRequestMerged,
   UnknownEvent,
 ]);
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
