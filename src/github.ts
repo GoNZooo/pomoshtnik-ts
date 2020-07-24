@@ -24,6 +24,8 @@ export const Repository = t.type({
   updated_at: t.string,
   description: t.union([t.null, t.string]),
   owner: Owner,
+  url: t.string,
+  html_url: t.string,
 });
 
 export type Repository = t.TypeOf<typeof Repository>;
@@ -60,6 +62,7 @@ export const Organization = t.type({
 export type Organization = t.TypeOf<typeof Organization>;
 
 export const RepositoryCreated = t.type({
+  event_type: t.literal("RepositoryCreated"),
   action: t.literal("created"),
   repository: Repository,
   organization: Organization,
@@ -90,6 +93,7 @@ export const Commit = t.type({
 export type Commit = t.TypeOf<typeof Commit>;
 
 export const PushedToRepository = t.type({
+  event_type: t.literal("PushedToRepository"),
   action: t.literal("push"),
   repository: Repository,
   ref: t.string,
@@ -138,6 +142,7 @@ export const Issue = t.type({
 });
 
 export const IssueOpened = t.type({
+  event_type: t.literal("IssueOpened"),
   action: t.literal("opened"),
   issue: Issue,
   repository: Repository,
@@ -147,7 +152,39 @@ export const IssueOpened = t.type({
 
 export type IssueOpened = t.TypeOf<typeof IssueOpened>;
 
-export const UnknownEvent = t.type({ action: t.literal("UnknownAction") });
+export const PullRequest = t.type({
+  id: t.number,
+  url: t.string,
+  number: t.number,
+  state: t.string,
+  locked: t.boolean,
+  title: t.string,
+  user: User,
+  body: t.string,
+  created_at: t.string,
+  updated_at: t.string,
+  assignee: User,
+  assignees: t.array(User),
+  labels: t.array(Label),
+  draft: t.boolean,
+});
+
+export const PullRequestOpened = t.type({
+  event_type: t.literal("PullRequestOpened"),
+  action: t.literal("opened"),
+  number: t.number,
+  pull_request: PullRequest,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type PullRequestOpened = t.TypeOf<typeof PullRequestOpened>;
+
+export const UnknownEvent = t.type({
+  event_type: t.literal("UnknownEvent"),
+  action: t.literal("UnknownAction"),
+});
 
 // @TODO: add `PullRequestOpened`
 // @TODO: maybe `PullRequestAssigned` too ,  or `PullRequestReviewRequested` instead
@@ -155,6 +192,7 @@ export const WebhookEvent = t.union([
   RepositoryCreated,
   PushedToRepository,
   IssueOpened,
+  PullRequestOpened,
   UnknownEvent,
 ]);
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
@@ -173,12 +211,26 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     if (RequestData.is(u)) {
       switch (u.event) {
         case "repository": {
-          return RepositoryCreated.decode(u.body);
+          if (t.UnknownRecord.is(u.body)) {
+            return RepositoryCreated.decode({ ...u.body, event_type: "RepositoryCreated" });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
         }
 
         case "push": {
-          if (typeof u.body === "object") {
-            return PushedToRepository.decode({ ...u.body, action: "push" });
+          if (t.UnknownRecord.is(u.body)) {
+            return PushedToRepository.decode({
+              ...u.body,
+              event_type: "PushedToRepository",
+              action: "push",
+            });
           } else {
             return left([
               {
@@ -191,8 +243,27 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
         }
 
         case "issues": {
-          if (typeof u.body === "object") {
-            return IssueOpened.decode(u.body);
+          if (t.UnknownRecord.is(u.body)) {
+            const eventType = u.body.action === "opened" ? "IssueOpened" : "IssueClosed";
+
+            return IssueOpened.decode({ event_type: eventType, ...u.body });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
+        }
+
+        case "pull_request": {
+          if (t.UnknownRecord.is(u.body)) {
+            const eventType =
+              u.body.action === "opened" ? "PullRequestOpened" : "PullRequestMerged";
+
+            return PullRequestOpened.decode({ event_type: eventType, ...u.body });
           } else {
             return left([
               {
@@ -205,7 +276,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
         }
 
         case "UnknownEvent": {
-          return t.success({ action: "UnknownAction" });
+          return t.success({ event_type: "UnknownEvent", action: "UnknownAction" });
         }
 
         default:

@@ -389,8 +389,8 @@ const handleGitHubWebhookEvent = (
   event: github.WebhookEvent,
   hook: Discord.WebhookClient
 ): void => {
-  switch (event.action) {
-    case "created": {
+  switch (event.event_type) {
+    case "RepositoryCreated": {
       const description = `${event.sender.login} created a repository: ${event.repository.name}`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
@@ -398,7 +398,7 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
-    case "push": {
+    case "PushedToRepository": {
       const commitLines = event.commits
         .reverse()
         .slice(0, MAX_COMMITS_DESCRIPTION)
@@ -413,7 +413,7 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
-    case "opened": {
+    case "IssueOpened": {
       const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.url})`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
@@ -421,7 +421,15 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
-    case "UnknownAction": {
+    case "PullRequestOpened": {
+      const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
+    case "UnknownEvent": {
       console.error("Unknown event:", event);
       break;
     }
