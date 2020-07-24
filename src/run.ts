@@ -414,7 +414,7 @@ const handleGitHubWebhookEvent = (
     }
 
     case "IssueOpened": {
-      const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.url})`;
+      const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
 
@@ -422,7 +422,7 @@ const handleGitHubWebhookEvent = (
     }
 
     case "PullRequestOpened": {
-      const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
 
@@ -430,7 +430,7 @@ const handleGitHubWebhookEvent = (
     }
 
     case "PullRequestMerged": {
-      const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
 
@@ -438,7 +438,7 @@ const handleGitHubWebhookEvent = (
     }
 
     case "PullRequestClosed": {
-      const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.url})`;
+      const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
       hook.send(embed);
 

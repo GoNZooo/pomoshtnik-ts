@@ -124,6 +124,7 @@ export const Label = t.type({
 export const Issue = t.type({
   id: t.number,
   url: t.string,
+  html_url: t.string,
   repository_url: t.string,
   number: t.number,
   title: t.string,
@@ -155,6 +156,7 @@ export type IssueOpened = t.TypeOf<typeof IssueOpened>;
 export const PullRequest = t.type({
   id: t.number,
   url: t.string,
+  html_url: t.string,
   number: t.number,
   state: t.string,
   locked: t.boolean,
