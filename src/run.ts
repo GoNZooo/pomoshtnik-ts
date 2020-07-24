@@ -49,7 +49,7 @@ application.post("/github-webhook", (request, response) => {
   const decodedEvent = github.WebhookEventFromRequestData.decode(requestData);
 
   if (decodedEvent._tag === "Right") {
-    handleWebhookEvent(decodedEvent.right, discordWebhook);
+    handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
   } else {
     console.error(`Undecodable event: ${reporter.report(decodedEvent)}`);
   }
@@ -385,7 +385,10 @@ export const handleISBNCommand = async (
   }
 };
 
-const handleWebhookEvent = (event: github.WebhookEvent, hook: Discord.WebhookClient): void => {
+const handleGitHubWebhookEvent = (
+  event: github.WebhookEvent,
+  hook: Discord.WebhookClient
+): void => {
   switch (event.action) {
     case "created": {
       const description = `${event.sender.login} created a repository: ${event.repository.name}`;
