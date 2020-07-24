@@ -421,6 +421,14 @@ const handleGitHubWebhookEvent = (
       break;
     }
 
+    case "IssueClosed": {
+      const description = `${event.sender.login} closed an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
+      const embed = new Discord.MessageEmbed({ description });
+      hook.send(embed);
+
+      break;
+    }
+
     case "PullRequestOpened": {
       const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });

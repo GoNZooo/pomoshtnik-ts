@@ -153,6 +153,20 @@ export const IssueOpened = t.type({
 
 export type IssueOpened = t.TypeOf<typeof IssueOpened>;
 
+export const IssueClosed = t.type({
+  event_type: t.literal("IssueClosed"),
+  action: t.literal("closed"),
+  issue: Issue,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type IssueClosed = t.TypeOf<typeof IssueClosed>;
+
+export const IssueEvent = t.union([IssueOpened, IssueClosed]);
+export type IssueEvent = t.TypeOf<typeof IssueEvent>;
+
 export const PullRequest = t.type({
   id: t.number,
   url: t.string,
@@ -220,7 +234,7 @@ export const UnknownEvent = t.type({
 export const WebhookEvent = t.union([
   RepositoryCreated,
   PushedToRepository,
-  IssueOpened,
+  IssueEvent,
   PullRequestEvent,
   UnknownEvent,
 ]);
@@ -275,7 +289,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
           if (t.UnknownRecord.is(u.body)) {
             const eventType = u.body.action === "opened" ? "IssueOpened" : "IssueClosed";
 
-            return IssueOpened.decode({ event_type: eventType, ...u.body });
+            return IssueEvent.decode({ event_type: eventType, ...u.body });
           } else {
             return left([
               {
