@@ -21,7 +21,7 @@ export const Repository = t.type({
   full_name: t.string,
   private: t.boolean,
   fork: t.boolean,
-  created_at: t.number,
+  created_at: t.string,
   updated_at: t.string,
   description: t.union([t.null, t.string]),
   owner: Owner,
@@ -29,7 +29,7 @@ export const Repository = t.type({
 
 export type Repository = t.TypeOf<typeof Repository>;
 
-export const Sender = t.type({
+export const User = t.type({
   login: t.string,
   id: t.number,
   avatar_url: t.string,
@@ -41,6 +41,10 @@ export const Sender = t.type({
   type: t.string,
   site_admin: t.boolean,
 });
+
+export type User = t.TypeOf<typeof User>;
+
+export const Sender = User;
 
 export type Sender = t.TypeOf<typeof Sender>;
 
@@ -105,11 +109,55 @@ export const PushedToRepository = t.type({
 
 export type PushedToRepository = t.TypeOf<typeof PushedToRepository>;
 
+export const Label = t.type({
+  id: t.number,
+  url: t.string,
+  name: t.string,
+  color: t.string,
+  default: t.boolean,
+  description: t.string,
+});
+
+export const Issue = t.type({
+  id: t.number,
+  url: t.string,
+  repository_url: t.string,
+  number: t.number,
+  title: t.string,
+  user: User,
+  labels: t.array(Label),
+  state: t.string,
+  locked: t.boolean,
+  assignee: t.union([t.null, User]),
+  assignees: t.array(User),
+  comments: t.number,
+  created_at: t.string,
+  updated_at: t.string,
+  closed_at: t.union([t.null, t.string]),
+  author_association: t.string,
+  body: t.string,
+});
+
+export const IssueOpened = t.type({
+  action: t.literal("opened"),
+  issue: Issue,
+  repository: Repository,
+  organization: Organization,
+  sender: User,
+});
+
+export type IssueOpened = t.TypeOf<typeof IssueOpened>;
+
 export const UnknownEvent = t.type({ action: t.literal("UnknownAction") });
 
 // @TODO: add `PullRequestOpened`
 // @TODO: maybe `PullRequestAssigned` too ,  or `PullRequestReviewRequested` instead
-export const WebhookEvent = t.union([RepositoryCreated, PushedToRepository, UnknownEvent]);
+export const WebhookEvent = t.union([
+  RepositoryCreated,
+  PushedToRepository,
+  IssueOpened,
+  UnknownEvent,
+]);
 export type WebhookEvent = t.TypeOf<typeof WebhookEvent>;
 
 export const RequestData = t.type({
@@ -132,6 +180,20 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
         case "push": {
           if (typeof u.body === "object") {
             return PushedToRepository.decode({ ...u.body, action: "push" });
+          } else {
+            return left([
+              {
+                value: u.body,
+                context: c,
+                message: "expecting object at 'body'",
+              },
+            ]);
+          }
+        }
+
+        case "issues": {
+          if (typeof u.body === "object") {
+            return IssueOpened.decode(u.body);
           } else {
             return left([
               {
