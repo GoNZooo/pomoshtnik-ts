@@ -157,33 +157,49 @@ const handlePersonCommand = async (
   switch (maybePeople._tag) {
     case "Right": {
       if (maybePeople.right.length > 0) {
-        const person = maybePeople.right[0];
+        const personCandidate = maybePeople.right[0];
+        const maybePerson = await tmdb.getPerson(tmdbApiKey, personCandidate.id);
+        switch (maybePerson._tag) {
+          case "Right": {
+            const person = maybePerson.right;
+            const posterUrl =
+              personCandidate.profile_path !== null
+                ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
+                : "";
 
-        const posterUrl =
-          person.profile_path !== null
-            ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${person.profile_path}`
-            : "";
+            const embed = new Discord.MessageEmbed({
+              title: personCandidate.name,
+              url: `https://imdb.com/name/${person.imdb_id}`,
+              image: { url: posterUrl },
+              footer: {
+                text: `Known for: ${personCandidate.known_for_department}    Popularity: ${personCandidate.popularity}`,
+              },
+            });
 
-        const embed = new Discord.MessageEmbed({
-          title: person.name,
-          image: { url: posterUrl },
-          footer: {
-            text: `Known for: ${person.known_for_department}    Popularity: ${person.popularity}`,
-          },
-        });
+            personCandidate.known_for.forEach((media) => {
+              const title =
+                media.media_type === "movie" ? media.title ?? "N/A" : media.name ?? "N/A";
 
-        person.known_for.forEach((media) => {
-          const title = media.media_type === "movie" ? media.title ?? "N/A" : media.name ?? "N/A";
+              const releaseDate =
+                media.media_type === "movie"
+                  ? media.release_date ?? "N/A"
+                  : media.first_air_date ?? "N/A";
 
-          const releaseDate =
-            media.media_type === "movie"
-              ? media.release_date ?? "N/A"
-              : media.first_air_date ?? "N/A";
+              embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
+            });
 
-          embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
-        });
+            message.reply(embed);
 
-        message.reply(embed);
+            break;
+          }
+
+          case "Left": {
+            break;
+          }
+
+          default:
+            assertUnreachable(maybePerson);
+        }
       } else {
         message.reply(`No results returned for '${command.name}'.`);
       }

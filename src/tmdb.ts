@@ -209,16 +209,27 @@ export const Person = t.type({
   name: t.string,
   id: t.number,
   profile_path: t.union([t.null, t.string]),
-  known_for: t.array(t.union([KnownForMovie, KnownForShow])),
   known_for_department: t.string,
+  imdb_id: t.string,
 });
 
 export type Person = t.TypeOf<typeof Person>;
 
+export const PersonCandidate = t.type({
+  popularity: t.number,
+  name: t.string,
+  id: t.number,
+  profile_path: t.union([t.null, t.string]),
+  known_for: t.array(t.union([KnownForMovie, KnownForShow])),
+  known_for_department: t.string,
+});
+
+export type PersonCandidate = t.TypeOf<typeof PersonCandidate>;
+
 export const PersonSearchResult = t.type({
   page: t.number,
   total_results: t.number,
-  results: t.array(Person),
+  results: t.array(PersonCandidate),
 });
 
 export const MovieSearchResult = t.type({
@@ -273,7 +284,7 @@ export const searchShow = async (
 export const searchPerson = async (
   apiKey: string,
   name: string
-): Promise<Either<t.Errors, Person[]>> => {
+): Promise<Either<t.Errors, PersonCandidate[]>> => {
   const result = await fetch(
     `${apiUrl}search/person?query=${name}&language=en-US&page=1&api_key=${apiKey}`
   );
@@ -282,6 +293,15 @@ export const searchPerson = async (
   return either.chain(PersonSearchResult.decode(json), (searchResults) => {
     return right(searchResults.results);
   });
+};
+
+export const getPerson = async (apiKey: string, id: number): Promise<Either<t.Errors, Person>> => {
+  const result = await fetch(
+    `${apiUrl}person/${id}?language=en-US&append_to_response=combined_credits&api_key=${apiKey}`
+  );
+  const json = await result.json();
+
+  return Person.decode(json);
 };
 
 export const getMovie = async (apiKey: string, id: number): Promise<Either<t.Errors, Movie>> => {
