@@ -122,6 +122,7 @@ export type Credits = t.TypeOf<typeof Credits>;
 export const Movie = t.type({
   poster_path: t.union([t.null, t.string]),
   id: t.number,
+  imdb_id: t.string,
   title: t.union([t.undefined, t.string]),
   vote_average: t.number,
   release_date: t.union([t.undefined, t.string]),
@@ -156,9 +157,20 @@ export const Episode = t.type({
 
 export type Episode = t.TypeOf<typeof Episode>;
 
+export const ExternalIds = t.type({
+  imdb_id: t.union([t.string, t.null]),
+  freebase_mid: t.union([t.string, t.null]),
+  freebase_id: t.union([t.string, t.null]),
+  tvdb_id: t.union([t.number, t.null]),
+  tvrage_id: t.union([t.number, t.null]),
+});
+
+export type ExternalIds = t.TypeOf<typeof ExternalIds>;
+
 export const Show = t.type({
   poster_path: t.union([t.null, t.string]),
   id: t.number,
+  external_ids: ExternalIds,
   name: t.string,
   vote_average: t.number,
   first_air_date: t.union([t.undefined, t.string]),
@@ -315,7 +327,7 @@ export const getMovie = async (apiKey: string, id: number): Promise<Either<t.Err
 
 export const getShow = async (apiKey: string, id: number): Promise<Either<t.Errors, Show>> => {
   const result = await fetch(
-    `${apiUrl}tv/${id}?language=en-US&append_to_response=credits&api_key=${apiKey}`
+    `${apiUrl}tv/${id}?language=en-US&append_to_response=credits,external_ids&api_key=${apiKey}`
   );
   const json = await result.json();
 

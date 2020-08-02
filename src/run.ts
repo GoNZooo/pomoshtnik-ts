@@ -241,6 +241,7 @@ export const handleMovieCommand = async (
             const movie = maybeMovie.right;
 
             const embed = new Discord.MessageEmbed({
+              url: `https://imdb.com/title/${movie.imdb_id}`,
               title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
               image: { url: posterUrl },
             });
@@ -319,7 +320,13 @@ export const handleShowCommand = async (
                   ].join("\n")
                 : "N/A";
 
+            const url =
+              show.external_ids.imdb_id !== null
+                ? `https://imdb.com/title/${show.external_ids.imdb_id}`
+                : undefined;
+
             const embed = new Discord.MessageEmbed({
+              url,
               title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
               image: { url: posterUrl },
             });
