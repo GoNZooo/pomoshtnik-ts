@@ -315,14 +315,15 @@ export const handleShowCommand = async (
 
             const lastEpisode = show.last_episode_to_air;
 
+            const padding = 2;
             const lastEpisodeDescription =
               lastEpisode !== null
                 ? [
                     `**${lastEpisode?.name}** (S${lastEpisode?.season_number
                       .toFixed(0)
-                      .padStart(2, "0")}E${lastEpisode?.episode_number
+                      .padStart(padding, "0")}E${lastEpisode?.episode_number
                       .toFixed(0)
-                      .padStart(2, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
+                      .padStart(padding, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
                     `${lastEpisode?.overview ?? "N/A"}`,
                   ].join("\n")
                 : "N/A";
@@ -434,7 +435,8 @@ const handleGitHubWebhookEvent = async (
         .slice(0, MAX_COMMITS_DESCRIPTION)
         .map((c) => `[${c.id}](${c.url})\n**${truncateCommitMessage(c.message)}**`)
         .join("\n---\n");
-      const refName = event.ref.split("/")[2];
+      const nameIndex = 2;
+      const refName = event.ref.split("/")[nameIndex];
       const description = `${event.sender.login} pushed to a repository: [${event.repository.name}/${refName}](${event.head_commit.url})`;
       const content = [description, commitLines].join("\n");
 
@@ -498,8 +500,10 @@ const truncateCommitMessage = (message: string): string => {
 };
 
 const truncateString = (stringToTruncate: string, length: number): string => {
+  const removeLength = 3;
+
   return stringToTruncate.length >= length
-    ? stringToTruncate.substring(0, length - 3) + "..."
+    ? stringToTruncate.substring(0, length - removeLength) + "..."
     : stringToTruncate;
 };
 
