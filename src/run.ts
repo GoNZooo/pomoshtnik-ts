@@ -41,7 +41,7 @@ const discordWebhook = new Discord.WebhookClient(githubWebhookId, githubWebhookT
 
 application.use(express.json());
 
-application.post("/github-webhook", (request, response) => {
+application.post("/github-webhook", async (request, response) => {
   const requestData = {
     event: request.header("x-github-event") ?? "UnknownEvent",
     body: request.body,
@@ -49,7 +49,7 @@ application.post("/github-webhook", (request, response) => {
   const decodedEvent = github.WebhookEventFromRequestData.decode(requestData);
 
   if (decodedEvent._tag === "Right") {
-    handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
+    await handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
   } else {
     console.error(`Undecodable event: ${reporter.report(decodedEvent)}`);
   }
@@ -79,7 +79,7 @@ const handleCommand = async (
 ): Promise<void> => {
   switch (command.type) {
     case "!ping": {
-      message.reply("Pong!");
+      await message.reply("Pong!");
 
       return;
     }
@@ -89,31 +89,31 @@ const handleCommand = async (
         image: { url: "https://cms.qz.com/wp-content/uploads/2015/11/rtxm3g2.jpg" },
       });
 
-      message.reply("I am Pomoshtnik, the helper bot!", embed);
+      await message.reply("I am Pomoshtnik, the helper bot!", embed);
 
       return;
     }
 
     case "!person": {
-      handlePersonCommand(command, message);
+      await handlePersonCommand(command, message);
 
       return;
     }
 
     case "!movie": {
-      handleMovieCommand(command, message);
+      await handleMovieCommand(command, message);
 
       return;
     }
 
     case "!show": {
-      handleShowCommand(command, message);
+      await handleShowCommand(command, message);
 
       return;
     }
 
     case "!isbn": {
-      handleISBNCommand(command, message);
+      await handleISBNCommand(command, message);
 
       return;
     }
@@ -123,13 +123,13 @@ const handleCommand = async (
   }
 };
 
-discordClient.on("message", (message) => {
+discordClient.on("message", async (message) => {
   if (!message.author.bot) {
     const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
 
     switch (decodedCommand._tag) {
       case "Right": {
-        handleCommand(decodedCommand.right, message);
+        await handleCommand(decodedCommand.right, message);
 
         break;
       }
@@ -146,7 +146,11 @@ discordClient.on("message", (message) => {
   }
 });
 
-discordClient.login(discordApiKey);
+discordClient.login(discordApiKey).then((user) => {
+  console.log(`Logged in as ${user}`);
+}).catch((error) => {
+  console.error("Unable to log in:", error);
+});
 
 const handlePersonCommand = async (
   command: commands.PersonCommand,
@@ -188,7 +192,7 @@ const handlePersonCommand = async (
               embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
             });
 
-            message.reply(embed);
+            await message.reply(embed);
 
             break;
           }
@@ -201,7 +205,7 @@ const handlePersonCommand = async (
             assertUnreachable(maybePerson);
         }
       } else {
-        message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.name}'.`);
       }
 
       break;
@@ -252,7 +256,7 @@ export const handleMovieCommand = async (
 
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));
-            message.reply(embed);
+            await message.reply(embed);
 
             break;
           }
@@ -267,7 +271,7 @@ export const handleMovieCommand = async (
             assertUnreachable(maybeMovie);
         }
       } else {
-        message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.name}'.`);
       }
 
       break;
@@ -339,7 +343,7 @@ export const handleShowCommand = async (
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
 
             embed.addField("Cast", castEntries.join("\n"));
-            message.reply(embed);
+            await message.reply(embed);
 
             break;
           }
@@ -392,7 +396,7 @@ export const handleISBNCommand = async (
       embed.addField("Publisher", book.publisher);
       embed.addField("ISBN", `${book.isbn} & ${book.isbn13}`);
 
-      message.reply(embed);
+      await message.reply(embed);
 
       break;
     }
@@ -408,15 +412,15 @@ export const handleISBNCommand = async (
   }
 };
 
-const handleGitHubWebhookEvent = (
+const handleGitHubWebhookEvent = async (
   event: github.WebhookEvent,
   hook: Discord.WebhookClient
-): void => {
+): Promise<void> => {
   switch (event.event_type) {
     case "RepositoryCreated": {
       const description = `${event.sender.login} created a repository: ${event.repository.name}`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
@@ -431,7 +435,7 @@ const handleGitHubWebhookEvent = (
       const description = `${event.sender.login} pushed to a repository: [${event.repository.name}/${refName}](${event.head_commit.url})`;
       const content = [description, commitLines].join("\n");
 
-      hook.send(content);
+      await hook.send(content);
 
       break;
     }
@@ -439,7 +443,7 @@ const handleGitHubWebhookEvent = (
     case "IssueOpened": {
       const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
@@ -447,7 +451,7 @@ const handleGitHubWebhookEvent = (
     case "IssueClosed": {
       const description = `${event.sender.login} closed an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
@@ -455,7 +459,7 @@ const handleGitHubWebhookEvent = (
     case "PullRequestOpened": {
       const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
@@ -463,7 +467,7 @@ const handleGitHubWebhookEvent = (
     case "PullRequestMerged": {
       const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
@@ -471,7 +475,7 @@ const handleGitHubWebhookEvent = (
     case "PullRequestClosed": {
       const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
       const embed = new Discord.MessageEmbed({ description });
-      hook.send(embed);
+      await hook.send(embed);
 
       break;
     }
