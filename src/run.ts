@@ -3,7 +3,7 @@ import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
-import { assertUnreachable } from "./utilities";
+import {assertUnreachable} from "./utilities";
 import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
 import express from "express";
@@ -86,7 +86,9 @@ const handleCommand = async (
 
     case "!whoareyou": {
       const embed = new Discord.MessageEmbed({
-        image: { url: "https://cms.qz.com/wp-content/uploads/2015/11/rtxm3g2.jpg" },
+        image: {
+          url: "https://cms.qz.com/wp-content/uploads/2015/11/rtxm3g2.jpg",
+        },
       });
 
       await message.reply("I am Pomoshtnik, the helper bot!", embed);
@@ -146,11 +148,12 @@ discordClient.on("message", async (message) => {
   }
 });
 
-discordClient.login(discordApiKey).then((user) => {
-  console.log(`Logged in as ${user}`);
-}).catch((error) => {
-  console.error("Unable to log in:", error);
-});
+discordClient
+  .login(discordApiKey)
+  .then((_token) => {})
+  .catch((error) => {
+    console.error("Unable to log in:", error);
+  });
 
 const handlePersonCommand = async (
   command: commands.PersonCommand,
@@ -174,7 +177,7 @@ const handlePersonCommand = async (
             const embed = new Discord.MessageEmbed({
               title: personCandidate.name,
               url: `https://imdb.com/name/${person.imdb_id}`,
-              image: { url: posterUrl },
+              image: {url: posterUrl},
               footer: {
                 text: `Known for: ${personCandidate.known_for_department}    Popularity: ${personCandidate.popularity}`,
               },
@@ -247,7 +250,7 @@ export const handleMovieCommand = async (
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
               title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
-              image: { url: posterUrl },
+              image: {url: posterUrl},
             });
 
             const castEntries = movie.credits.cast
@@ -332,7 +335,7 @@ export const handleShowCommand = async (
             const embed = new Discord.MessageEmbed({
               url,
               title: `${show.name} (${show.vote_average}, ${show.first_air_date})`,
-              image: { url: posterUrl },
+              image: {url: posterUrl},
             });
 
             embed.addField("Description", show.overview);
@@ -386,7 +389,7 @@ export const handleISBNCommand = async (
 
       const embed = new Discord.MessageEmbed({
         title: book.title,
-        image: { url: book.image ?? "" },
+        image: {url: book.image ?? ""},
       });
 
       embed.addField("Overview", book.overview ?? "N/A");
@@ -419,7 +422,7 @@ const handleGitHubWebhookEvent = async (
   switch (event.event_type) {
     case "RepositoryCreated": {
       const description = `${event.sender.login} created a repository: ${event.repository.name}`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;
@@ -442,7 +445,7 @@ const handleGitHubWebhookEvent = async (
 
     case "IssueOpened": {
       const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;
@@ -450,7 +453,7 @@ const handleGitHubWebhookEvent = async (
 
     case "IssueClosed": {
       const description = `${event.sender.login} closed an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;
@@ -458,7 +461,7 @@ const handleGitHubWebhookEvent = async (
 
     case "PullRequestOpened": {
       const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;
@@ -466,7 +469,7 @@ const handleGitHubWebhookEvent = async (
 
     case "PullRequestMerged": {
       const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;
@@ -474,7 +477,7 @@ const handleGitHubWebhookEvent = async (
 
     case "PullRequestClosed": {
       const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({ description });
+      const embed = new Discord.MessageEmbed({description});
       await hook.send(embed);
 
       break;

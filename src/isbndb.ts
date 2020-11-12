@@ -1,6 +1,6 @@
 import * as t from "io-ts";
 import fetch from "isomorphic-fetch";
-import { Either } from "fp-ts/lib/Either";
+import {Either} from "fp-ts/lib/Either";
 
 const baseUrl = "https://api2.isbndb.com/";
 
@@ -20,8 +20,8 @@ export const Book = t.type({
 export type Book = t.TypeOf<typeof Book>;
 
 export const getBookByISBN = async (key: string, isbn: string): Promise<Either<t.Errors, Book>> => {
-  const response = await fetch(`${baseUrl}book/${isbn}`, { headers: { Authorization: key } });
-  const json = (await response.json()) as { book: unknown };
+  const response = await fetch(`${baseUrl}book/${isbn}`, {headers: {Authorization: key}});
+  const json = (await response.json()) as {book: unknown};
 
   return Book.decode(json.book);
 };

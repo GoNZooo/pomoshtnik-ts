@@ -1,5 +1,5 @@
 import * as t from "io-ts";
-import { left } from "fp-ts/lib/Either";
+import {left} from "fp-ts/lib/Either";
 
 export const Owner = t.type({
   id: t.number,
@@ -71,10 +71,10 @@ export const RepositoryCreated = t.type({
 
 export type RepositoryCreated = t.TypeOf<typeof RepositoryCreated>;
 
-export const Pusher = t.type({ name: t.string, email: t.string });
+export const Pusher = t.type({name: t.string, email: t.string});
 export type Pusher = t.TypeOf<typeof Pusher>;
 
-export const Author = t.type({ name: t.string, email: t.string, username: t.string });
+export const Author = t.type({name: t.string, email: t.string, username: t.string});
 export type Author = t.TypeOf<typeof Author>;
 
 export const Commit = t.type({
@@ -255,7 +255,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
       switch (u.event) {
         case "repository": {
           if (t.UnknownRecord.is(u.body)) {
-            return RepositoryCreated.decode({ ...u.body, event_type: "RepositoryCreated" });
+            return RepositoryCreated.decode({...u.body, event_type: "RepositoryCreated"});
           } else {
             return left([
               {
@@ -289,7 +289,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
           if (t.UnknownRecord.is(u.body)) {
             const eventType = u.body.action === "opened" ? "IssueOpened" : "IssueClosed";
 
-            return IssueEvent.decode({ event_type: eventType, ...u.body });
+            return IssueEvent.decode({event_type: eventType, ...u.body});
           } else {
             return left([
               {
@@ -305,7 +305,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
           if (t.UnknownRecord.is(u.body)) {
             const eventType = getPullRequestEventType(u.body);
 
-            return PullRequestEvent.decode({ event_type: eventType, ...u.body });
+            return PullRequestEvent.decode({event_type: eventType, ...u.body});
           } else {
             return left([
               {
@@ -318,7 +318,7 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
         }
 
         case "UnknownEvent": {
-          return t.success({ event_type: "UnknownEvent", action: "UnknownAction" });
+          return t.success({event_type: "UnknownEvent", action: "UnknownAction"});
         }
 
         default:
@@ -335,11 +335,11 @@ export const WebhookEventFromRequestData = new t.Type<WebhookEvent, RequestData,
     }
   },
   (rc) => {
-    return { event: "repository", body: JSON.stringify(rc) };
+    return {event: "repository", body: JSON.stringify(rc)};
   }
 );
 
-const getPullRequestEventType = (body: { [key: string]: unknown }): string => {
+const getPullRequestEventType = (body: {[key: string]: unknown}): string => {
   switch (body.action) {
     case "opened":
       return "PullRequestOpened";

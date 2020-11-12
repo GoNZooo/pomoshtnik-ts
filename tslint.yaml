@@ -1,5 +1,7 @@
 extends: "tslint:recommended"
 rules:
+  no-empty:
+    options: allow-empty-functions
   ordered-imports: false
   object-literal-sort-keys: false
   max-line-length: [true, { "limit": 100, "ignore-pattern": "^\\s+//" }]
@@ -7,7 +9,16 @@ rules:
   no-console: false
   no-inferrable-types: true
   prefer-for-of: true
-  no-magic-numbers: [true, { "allowed-numbers": [-1, 0, 1, 2, 3] }]
+  no-magic-numbers:
+    options:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 10
+      - 0
+      - -1
   only-arrow-functions: true
   no-implicit-dependencies: true
   strict-boolean-expressions: true
