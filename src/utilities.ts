@@ -1,3 +1,3 @@
 export const assertUnreachable = (value: never): never => {
-  throw new Error("Reached unreachable code");
+  throw new Error(`Reached unreachable code: ${value}`);
 };
