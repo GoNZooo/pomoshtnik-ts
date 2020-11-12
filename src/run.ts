@@ -51,7 +51,7 @@ application.post("/github-webhook", async (request, response) => {
   if (decodedEvent._tag === "Right") {
     await handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
   } else {
-    console.error(`Undecodable event: ${reporter.report(decodedEvent)}`);
+    console.error(`Unable to decode event event: ${reporter.report(decodedEvent)}`);
   }
 
   response.sendStatus(OK_STATUS);
