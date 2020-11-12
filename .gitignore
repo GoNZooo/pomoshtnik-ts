@@ -2,3 +2,4 @@ node_modules
 _build
 .env
 yarn-error.log
+.idea
