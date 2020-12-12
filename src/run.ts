@@ -8,6 +8,7 @@ import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
 import express from "express";
 import * as github from "./github";
+import {Command, CommandTag, ISBN, Movie, Person, Show} from "./gotyno/commands";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
@@ -73,18 +74,15 @@ discordClient.on("ready", async () => {
   console.log(`Logged in as: ${discordClient.user?.tag ?? "N/A"}!`);
 });
 
-const handleCommand = async (
-  command: commands.Command,
-  message: Discord.Message
-): Promise<void> => {
+const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   switch (command.type) {
-    case "!ping": {
+    case CommandTag.Ping: {
       await message.reply("Pong!");
 
       return;
     }
 
-    case "!whoareyou": {
+    case CommandTag.WhoAreYou: {
       const embed = new Discord.MessageEmbed({
         image: {
           url: "https://cms.qz.com/wp-content/uploads/2015/11/rtxm3g2.jpg",
@@ -96,25 +94,25 @@ const handleCommand = async (
       return;
     }
 
-    case "!person": {
+    case CommandTag.Person: {
       await handlePersonCommand(command, message);
 
       return;
     }
 
-    case "!movie": {
+    case CommandTag.Movie: {
       await handleMovieCommand(command, message);
 
       return;
     }
 
-    case "!show": {
+    case CommandTag.Show: {
       await handleShowCommand(command, message);
 
       return;
     }
 
-    case "!isbn": {
+    case CommandTag.ISBN: {
       await handleISBNCommand(command, message);
 
       return;
@@ -127,17 +125,17 @@ const handleCommand = async (
 
 discordClient.on("message", async (message) => {
   if (!message.author.bot) {
-    const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
+    const decodedCommand = commands.commandFromStrings(message.content.split(" "));
 
-    switch (decodedCommand._tag) {
-      case "Right": {
-        await handleCommand(decodedCommand.right, message);
+    switch (decodedCommand.type) {
+      case "Valid": {
+        await handleCommand(decodedCommand.value, message);
 
         break;
       }
 
-      case "Left": {
-        console.error("Unable to decode message:", reporter.report(decodedCommand));
+      case "Invalid": {
+        console.error("Unable to decode message:", decodedCommand.errors);
 
         break;
       }
@@ -155,11 +153,8 @@ discordClient
     console.error("Unable to log in:", error);
   });
 
-const handlePersonCommand = async (
-  command: commands.PersonCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.name);
+const handlePersonCommand = async (command: Person, message: Discord.Message): Promise<void> => {
+  const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.data);
 
   switch (maybePeople._tag) {
     case "Right": {
@@ -208,7 +203,7 @@ const handlePersonCommand = async (
             assertUnreachable(maybePerson);
         }
       } else {
-        await message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.data}'.`);
       }
 
       break;
@@ -226,10 +221,10 @@ const handlePersonCommand = async (
 };
 
 export const handleMovieCommand = async (
-  command: commands.MovieCommand,
+  command: Movie,
   message: Discord.Message
 ): Promise<void> => {
-  const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.name);
+  const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.data);
 
   switch (maybeMovies._tag) {
     case "Right": {
@@ -274,7 +269,7 @@ export const handleMovieCommand = async (
             assertUnreachable(maybeMovie);
         }
       } else {
-        await message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.data}'.`);
       }
 
       break;
@@ -291,11 +286,8 @@ export const handleMovieCommand = async (
   }
 };
 
-export const handleShowCommand = async (
-  command: commands.ShowCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybeShows = await tmdb.searchShow(tmdbApiKey, command.name);
+export const handleShowCommand = async (command: Show, message: Discord.Message): Promise<void> => {
+  const maybeShows = await tmdb.searchShow(tmdbApiKey, command.data);
 
   switch (maybeShows._tag) {
     case "Right": {
@@ -378,11 +370,8 @@ export const handleShowCommand = async (
   }
 };
 
-export const handleISBNCommand = async (
-  command: commands.ISBNCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.isbn);
+export const handleISBNCommand = async (command: ISBN, message: Discord.Message): Promise<void> => {
+  const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.data);
 
   switch (maybeBook._tag) {
     case "Right": {

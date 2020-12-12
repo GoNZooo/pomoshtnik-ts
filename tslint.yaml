@@ -15,8 +15,8 @@ rules:
       - 10
       - 0
       - -1
-  only-arrow-functions: true
-  no-implicit-dependencies: true
+  only-arrow-functions: false
+  no-implicit-dependencies: false
   strict-boolean-expressions: true
   arrow-return-shorthand: true
   indent: [true, "spaces", 2]

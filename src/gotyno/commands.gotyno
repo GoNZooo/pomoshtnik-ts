@@ -1,0 +1,18 @@
+union Either <L, R>{
+    Left: L
+    Right: R
+}
+
+union Maybe <T>{
+    Nothing
+    Just: T
+}
+
+union Command {
+    Ping
+    WhoAreYou
+    Movie: String
+    Person: String
+    Show: String
+    ISBN: String
+}
