@@ -1,7 +1,6 @@
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
-import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import {assertUnreachable} from "./utilities";
 import reporter from "io-ts-reporters";
@@ -65,10 +64,10 @@ let tmdbImageBaseUrl: string;
 discordClient.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
 
-  console.error(reporter.report(configurationResponse));
-
-  if (either.isRight(configurationResponse)) {
-    tmdbImageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
+  if (configurationResponse.type === "Invalid") {
+    console.error("Error fetching configuration:", configurationResponse.errors);
+  } else {
+    tmdbImageBaseUrl = `${configurationResponse.value.images.secure_base_url}`;
   }
 
   console.log(`Logged in as: ${discordClient.user?.tag ?? "N/A"}!`);

@@ -15,6 +15,7 @@ rules:
       - 10
       - 0
       - -1
+  no-namespace: false
   only-arrow-functions: false
   no-implicit-dependencies: false
   strict-boolean-expressions: true

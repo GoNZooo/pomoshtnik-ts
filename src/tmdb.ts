@@ -1,91 +1,25 @@
 import * as t from "io-ts";
+import * as svt from "simple-validation-tools";
 import {Either, either, right} from "fp-ts/lib/Either";
 import fetch from "isomorphic-fetch";
+import {
+  BackdropSize,
+  ConfigurationData,
+  PosterSize,
+  ProfileSize,
+  StillSize,
+  validateConfigurationData,
+} from "./gotyno/tmdb";
 
 const apiUrl = "https://api.themoviedb.org/3/";
 
-const posterDefinition = {
-  w92: null,
-  w154: null,
-  w185: null,
-  w342: null,
-  w500: null,
-  w780: null,
-  original: null,
-} as const;
-// Ordinarily this would just be a list of strings that make up the enum but `io-ts`
-// encourages using `keyof` of an object to make the enum/union.
+export const preferredPosterSize: PosterSize = PosterSize.w185;
 
-const profileDefinition = {
-  w45: null,
-  w185: null,
-  w300: null,
-  h632: null,
-  original: null,
-} as const;
+export const preferredProfileSize: ProfileSize = ProfileSize.w185;
 
-const stillDefinition = {
-  w92: null,
-  w185: null,
-  w300: null,
-  h632: null,
-  original: null,
-} as const;
+export const preferredStillSize: StillSize = StillSize.w185;
 
-const backdropDefinition = {
-  w300: null,
-  w780: null,
-  w1280: null,
-  original: null,
-} as const;
-
-export const PosterSize = t.keyof(posterDefinition);
-
-// Defines sizes for posters to link to; these are located at different trees on
-// TMDB's server.
-export type PosterSize = keyof typeof posterDefinition;
-
-export const ProfileSize = t.keyof(profileDefinition);
-
-// Defines sizes for profile pictures to link to; these are located at different
-// trees on TMDB's server.
-export type ProfileSize = keyof typeof profileDefinition;
-
-export const StillSize = t.keyof(stillDefinition);
-
-// Defines sizes for stills (movie/TV) to link to; these are located at different
-// trees on TMDB's server.
-export type StillSize = keyof typeof stillDefinition;
-
-export const BackdropSize = t.keyof(backdropDefinition);
-
-// Defines sizes for stills (movie/TV) to link to; these are located at different
-// trees on TMDB's server.
-export type BackdropSize = keyof typeof backdropDefinition;
-
-export const preferredPosterSize: PosterSize = "w185";
-
-export const preferredProfileSize: ProfileSize = "w185";
-
-export const preferredStillSize: StillSize = "w185";
-
-export const preferredBackdropSize: BackdropSize = "w300";
-
-export const ImageConfigurationData = t.type({
-  base_url: t.string,
-  secure_base_url: t.string,
-  poster_sizes: t.array(PosterSize),
-  profile_sizes: t.array(ProfileSize),
-  still_sizes: t.array(StillSize),
-  backdrop_sizes: t.array(BackdropSize),
-});
-
-export const ConfigurationData = t.type({
-  images: ImageConfigurationData,
-  change_keys: t.array(t.string),
-});
-
-export type ConfigurationData = t.TypeOf<typeof ConfigurationData>;
+export const preferredBackdropSize: BackdropSize = BackdropSize.w300;
 
 export const CastEntry = t.type({
   // disabling this because it causes issues with different formats for TV and movies
@@ -259,10 +193,11 @@ export const ShowSearchResult = t.type({
 const configurationSuffix = `configuration`;
 export const getConfiguration = async (
   apiKey: string
-): Promise<Either<t.Errors, ConfigurationData>> => {
-  return ConfigurationData.decode(
-    await (await fetch(apiUrl + configurationSuffix + `?api_key=${apiKey}`)).json()
-  );
+): Promise<svt.ValidationResult<ConfigurationData>> => {
+  const response = await fetch(apiUrl + configurationSuffix + `?api_key=${apiKey}`);
+  const json = await response.json();
+
+  return validateConfigurationData(json);
 };
 
 export const searchMovie = async (
