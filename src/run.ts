@@ -155,14 +155,14 @@ discordClient
 const handlePersonCommand = async (command: Person, message: Discord.Message): Promise<void> => {
   const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.data);
 
-  switch (maybePeople._tag) {
-    case "Right": {
-      if (maybePeople.right.length > 0) {
-        const personCandidate = maybePeople.right[0];
+  switch (maybePeople.type) {
+    case "Valid": {
+      if (maybePeople.value.length > 0) {
+        const personCandidate = maybePeople.value[0];
         const maybePerson = await tmdb.getPerson(tmdbApiKey, personCandidate.id);
-        switch (maybePerson._tag) {
-          case "Right": {
-            const person = maybePerson.right;
+        switch (maybePerson.type) {
+          case "Valid": {
+            const person = maybePerson.value;
             const posterUrl =
               personCandidate.profile_path !== null
                 ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
@@ -194,7 +194,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
             break;
           }
 
-          case "Left": {
+          case "Invalid": {
             break;
           }
 
@@ -208,8 +208,8 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybePeople).join(" "));
+    case "Invalid": {
+      console.error("error:", maybePeople.errors);
 
       break;
     }
@@ -225,10 +225,10 @@ export const handleMovieCommand = async (
 ): Promise<void> => {
   const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.data);
 
-  switch (maybeMovies._tag) {
-    case "Right": {
-      if (maybeMovies.right.length > 0) {
-        const movieCandidate = maybeMovies.right[0];
+  switch (maybeMovies.type) {
+    case "Valid": {
+      if (maybeMovies.value.length > 0) {
+        const movieCandidate = maybeMovies.value[0];
 
         const posterUrl =
           movieCandidate.poster_path !== null
@@ -237,9 +237,9 @@ export const handleMovieCommand = async (
 
         const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
 
-        switch (maybeMovie._tag) {
-          case "Right": {
-            const movie = maybeMovie.right;
+        switch (maybeMovie.type) {
+          case "Valid": {
+            const movie = maybeMovie.value;
 
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
@@ -258,8 +258,8 @@ export const handleMovieCommand = async (
             break;
           }
 
-          case "Left": {
-            console.error(reporter.report(maybeMovie));
+          case "Invalid": {
+            console.error(maybeMovie.errors);
 
             break;
           }
@@ -274,8 +274,8 @@ export const handleMovieCommand = async (
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeMovies).join("\n"));
+    case "Invalid": {
+      console.error("error:", maybeMovies.errors);
 
       break;
     }
@@ -288,10 +288,10 @@ export const handleMovieCommand = async (
 export const handleShowCommand = async (command: Show, message: Discord.Message): Promise<void> => {
   const maybeShows = await tmdb.searchShow(tmdbApiKey, command.data);
 
-  switch (maybeShows._tag) {
-    case "Right": {
-      if (maybeShows.right.length > 0) {
-        const showCandidate = maybeShows.right[0];
+  switch (maybeShows.type) {
+    case "Valid": {
+      if (maybeShows.value.length > 0) {
+        const showCandidate = maybeShows.value[0];
 
         const posterUrl =
           showCandidate.poster_path !== null
@@ -300,9 +300,9 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 
         const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
 
-        switch (maybeShow._tag) {
-          case "Right": {
-            const show = maybeShow.right;
+        switch (maybeShow.type) {
+          case "Valid": {
+            const show = maybeShow.value;
 
             const lastEpisode = show.last_episode_to_air;
 
@@ -343,8 +343,8 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
             break;
           }
 
-          case "Left": {
-            console.error(`Unable to get credits: ${reporter.report(maybeShow)}`);
+          case "Invalid": {
+            console.error(`Unable to get credits: ${maybeShow.errors}`);
 
             break;
           }
@@ -358,8 +358,8 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeShows).join("\n"));
+    case "Invalid": {
+      console.error("error:", maybeShows.errors);
 
       break;
     }

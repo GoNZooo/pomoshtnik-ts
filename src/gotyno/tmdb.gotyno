@@ -44,3 +44,149 @@ struct ConfigurationData {
     images: ImageConfigurationData
     change_keys: []String
 }
+
+struct CastEntry {
+    character: String
+    credit_id: String
+    id: U32
+    name: String
+    order: U32
+    profile_path: ?String
+}
+
+struct CrewEntry {
+    credit_id: String
+    department: String
+    id: U32
+    name: String
+    job: String
+    profile_path: ?String
+}
+
+struct Credits {
+    id: ?U32
+    cast: []CastEntry
+    crew: []CrewEntry
+}
+
+struct Movie {
+    poster_path: ?String
+    id: U32
+    imdb_id: String
+    title: ?String
+    vote_average: F32
+    release_date: ?String
+    overview: String
+    credits: Credits
+}
+
+struct Episode {
+    air_date: String
+    id: U32
+    name: String
+    overview: String
+    season_number: U32
+    episode_number: U32
+    still_path: ?String
+    vote_average: F32
+    vote_count: U32
+}
+
+struct ExternalIds {
+    imdb_id: ?String
+    freebase_mid: ?String
+    freebase_id: ?String
+    tvdb_id: ?U32
+    tvrage_id: ?U32
+}
+
+struct Show {
+    poster_path: ?String
+    id: U32
+    external_ids: ExternalIds
+    name: String
+    vote_average: F32
+    first_air_date: ?String
+    overview: String
+    credits: Credits
+    last_episode_to_air: ?Episode
+}
+
+struct Person {
+    popularity: F32
+    name: String
+    id: U32
+    profile_path: ?String
+    known_for_department: String
+    imdb_id: String
+}
+
+struct MovieCandidate {
+    poster_path: ?String
+    id: U32
+    title: ?String
+    vote_average: F32
+    release_date: ?String
+    overview: String
+}
+
+struct ShowCandidate {
+    poster_path: ?String
+    id: U32
+    name: String
+    vote_average: F32
+    first_air_date: ?String
+    overview: String
+}
+
+struct KnownForMovie {
+    media_type: "movie"
+    poster_path: ?String
+    id: U32
+    title: ?String
+    vote_average: F32
+    release_date: ?String
+    overview: String
+}
+
+struct KnownForShow {
+    media_type: "tv"
+    poster_path: ?String
+    id: U32
+    vote_average: F32
+    overview: String
+    first_air_date: ?String
+    name: ?String
+}
+
+untagged union KnownFor {
+    KnownForShow
+    KnownForMovie
+}
+
+struct PersonCandidate {
+    popularity: F32
+    name: String
+    id: U32
+    profile_path: ?String
+    known_for: []KnownFor
+    known_for_department: String
+}
+
+struct PersonSearchResult {
+    page: U32
+    total_results: U32
+    results: []PersonCandidate
+}
+
+struct MovieSearchResult {
+    page: U32
+    total_results: U32
+    results: []MovieCandidate
+}
+
+struct ShowSearchResult {
+    page: U32
+    total_results: U32
+    results: []ShowCandidate
+}
