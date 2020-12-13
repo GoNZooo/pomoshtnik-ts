@@ -794,12 +794,12 @@ got@^9.6.0:
     to-readable-stream "^1.0.0"
     url-parse-lax "^3.0.0"
 
-gotyno@0.2.3:
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.2.3.tgz#65768d64d823ae183079f2cf9c86467bdbc659a6"
-  integrity sha512-doCe7h4E7cybuxV/gbjI/tsIW7yEr1avpnhqrvdAaX1K1WQFlk9sqJ9tEFkfMhoWcaZPjZ5Bd+TeYMDFDst7ow==
+gotyno@0.2.4:
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.2.4.tgz#a40628bafdafaaeae75dc8b88c68c82a1bb613cf"
+  integrity sha512-fvKDpvFTNU43TNHUTc3qnAk0cpr6MP1B8Gq21Qq7449YtUJbW3Z/tqFPDM5pOCvOA+7z9Zr9HNNXPWJ8rfjmEg==
   dependencies:
-    simple-validation-tools GoNZooo/simple-validation-tools#e5b2640ae7b472e25acd4170d36035111fc97595
+    simple-validation-tools GoNZooo/simple-validation-tools#d68d0b11e16f3cc04bb3abf06869f2415d4f4371
 
 graceful-fs@^4.1.2, graceful-fs@^4.2.4:
   version "4.2.4"
@@ -1482,9 +1482,9 @@ signal-exit@^3.0.2:
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
   integrity sha512-VUJ49FC8U1OxwZLxIbTTrDvLnf/6TDgxZcK8wxR8zs13xpx7xbG60ndBlhNrFi2EMuFRoeDoJO7wthSLq42EjA==
 
-simple-validation-tools@GoNZooo/simple-validation-tools#e5b2640ae7b472e25acd4170d36035111fc97595:
-  version "1.1.0"
-  resolved "https://codeload.github.com/GoNZooo/simple-validation-tools/tar.gz/e5b2640ae7b472e25acd4170d36035111fc97595"
+simple-validation-tools@GoNZooo/simple-validation-tools#d68d0b11e16f3cc04bb3abf06869f2415d4f4371:
+  version "1.2.0"
+  resolved "https://codeload.github.com/GoNZooo/simple-validation-tools/tar.gz/d68d0b11e16f3cc04bb3abf06869f2415d4f4371"
 
 source-map-support@^0.5.17:
   version "0.5.19"
