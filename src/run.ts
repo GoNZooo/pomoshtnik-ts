@@ -6,8 +6,8 @@ import {assertUnreachable} from "./utilities";
 import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
 import express from "express";
-import * as github from "./github";
 import {Command, CommandTag, ISBN, Movie, Person, Show} from "./gotyno/commands";
+import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
@@ -43,15 +43,15 @@ application.use(express.json());
 
 application.post("/github-webhook", async (request, response) => {
   const requestData = {
-    event: request.header("x-github-event") ?? "UnknownEvent",
-    body: request.body,
+    type: request.header("x-github-event") ?? "UnknownEvent",
+    data: request.body,
   };
-  const decodedEvent = github.WebhookEventFromRequestData.decode(requestData);
+  const decodedEvent = validatePush(requestData);
 
-  if (decodedEvent._tag === "Right") {
-    await handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
+  if (decodedEvent.type === "Valid") {
+    await handleGitHubWebhookEvent(decodedEvent.value, discordWebhook);
   } else {
-    console.error(`Unable to decode event event: ${reporter.report(decodedEvent)}`);
+    console.error("Unable to decode event:", decodedEvent.errors);
   }
 
   response.sendStatus(OK_STATUS);
@@ -407,27 +407,19 @@ export const handleISBNCommand = async (command: ISBN, message: Discord.Message)
 };
 
 const handleGitHubWebhookEvent = async (
-  event: github.WebhookEvent,
+  event: WebhookEvent,
   hook: Discord.WebhookClient
 ): Promise<void> => {
-  switch (event.event_type) {
-    case "RepositoryCreated": {
-      const description = `${event.sender.login} created a repository: ${event.repository.name}`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PushedToRepository": {
-      const commitLines = event.commits
+  switch (event.type) {
+    case WebhookEventTag.push: {
+      const commitLines = event.data.commits
         .reverse()
         .slice(0, MAX_COMMITS_DESCRIPTION)
         .map((c) => `[${c.id}](${c.url})\n**${truncateCommitMessage(c.message)}**`)
         .join("\n---\n");
       const nameIndex = 2;
-      const refName = event.ref.split("/")[nameIndex];
-      const description = `${event.sender.login} pushed to a repository: [${event.repository.name}/${refName}](${event.head_commit.url})`;
+      const refName = event.data.ref.split("/")[nameIndex];
+      const description = `${event.data.sender.login} pushed to a repository: [${event.data.repository.name}/${refName}](${event.data.head_commit.url})`;
       const content = [description, commitLines].join("\n");
 
       await hook.send(content);
@@ -435,53 +427,8 @@ const handleGitHubWebhookEvent = async (
       break;
     }
 
-    case "IssueOpened": {
-      const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "IssueClosed": {
-      const description = `${event.sender.login} closed an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestOpened": {
-      const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestMerged": {
-      const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestClosed": {
-      const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "UnknownEvent": {
-      console.error("Unknown event:", event);
-      break;
-    }
-
     default:
-      assertUnreachable(event);
+      assertUnreachable(event.type);
   }
 };
 
