@@ -354,6 +354,8 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
         }
 
         break;
+      } else {
+        await message.reply(`No results returned for '${command.data}'.`);
       }
       break;
     }
