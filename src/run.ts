@@ -5,8 +5,18 @@ import * as commands from "./commands";
 import {assertUnreachable} from "./utilities";
 import * as isbndb from "./isbndb";
 import express from "express";
-import {Command, CommandTag, ISBN, Movie, Person, Show} from "./gotyno/commands";
+import {
+  Command,
+  CommandTag,
+  GitHubRepository,
+  GitHubUser,
+  ISBN,
+  Movie,
+  Person,
+  Show,
+} from "./gotyno/commands";
 import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
+import {getRepository, getUser} from "./github";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
@@ -72,6 +82,69 @@ discordClient.on("ready", async () => {
   console.log(`Logged in as: ${discordClient.user?.tag ?? "N/A"}!`);
 });
 
+async function handleGitHubUserCommand(
+  command: GitHubUser,
+  message: Discord.Message
+): Promise<void> {
+  const userResult = await getUser(command.data);
+
+  if (userResult.type === "Valid") {
+    const user = userResult.value;
+    console.log("user:", user);
+
+    const embed = new Discord.MessageEmbed({
+      title: user.login,
+      url: user.html_url,
+      image: {url: user.avatar_url},
+      footer: {},
+    });
+
+    embed.addField("Bio", user.bio);
+    if (user.location !== null && user.location !== undefined) {
+      embed.addField("Location", user.location);
+    }
+    embed.addField("Public repositories", user.public_repos);
+    embed.addField("Followers", user.followers);
+    embed.addField("Following", user.following);
+    embed.addField("Created", user.created_at);
+    embed.addField("Updated", user.updated_at);
+    if (user.blog !== null) {
+      embed.addField("Website", user.blog);
+    }
+
+    await message.reply(embed);
+  } else {
+    console.error("Error fetching user:", userResult.errors);
+  }
+}
+
+async function handleGitHubRepositoryCommand(
+  command: GitHubRepository,
+  message: Discord.Message
+): Promise<void> {
+  const repositoryResult = await getRepository(command.data);
+  console.log(repositoryResult);
+
+  if (repositoryResult.type === "Valid") {
+    const repository = repositoryResult.value;
+    console.log("repository:", repository);
+
+    const embed = new Discord.MessageEmbed({
+      title: repository.full_name,
+      url: repository.html_url,
+      footer: {},
+    });
+
+    embed.addField("Description", repository.description);
+    embed.addField("Creator", repository.owner.login);
+    embed.addField("Language", repository.language);
+
+    await message.reply(embed);
+  } else {
+    console.error("Error fetching repository:", repositoryResult.errors);
+  }
+}
+
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   switch (command.type) {
     case CommandTag.Ping: {
@@ -112,6 +185,18 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.ISBN: {
       await handleISBNCommand(command, message);
+
+      return;
+    }
+
+    case CommandTag.GitHubUser: {
+      await handleGitHubUserCommand(command, message);
+
+      return;
+    }
+
+    case CommandTag.GitHubRepository: {
+      await handleGitHubRepositoryCommand(command, message);
 
       return;
     }

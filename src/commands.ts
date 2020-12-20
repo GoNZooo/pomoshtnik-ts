@@ -9,6 +9,8 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!person": CommandTag.Person,
     "!show": CommandTag.Show,
     "!isbn": CommandTag.ISBN,
+    "!github-user": CommandTag.GitHubUser,
+    "!github-repo": CommandTag.GitHubRepository,
   };
   if (strings.length < 1) {
     return {type: "Invalid", errors: "String list has no entries"};

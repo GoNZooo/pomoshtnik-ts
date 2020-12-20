@@ -1,6 +1,14 @@
 import * as svt from "simple-validation-tools";
 
-export type Command = Ping | WhoAreYou | Movie | Person | Show | ISBN;
+export type Command =
+  | Ping
+  | WhoAreYou
+  | Movie
+  | Person
+  | Show
+  | ISBN
+  | GitHubUser
+  | GitHubRepository;
 
 export enum CommandTag {
   Ping = "Ping",
@@ -9,6 +17,8 @@ export enum CommandTag {
   Person = "Person",
   Show = "Show",
   ISBN = "ISBN",
+  GitHubUser = "GitHubUser",
+  GitHubRepository = "GitHubRepository",
 }
 
 export type Ping = {
@@ -39,6 +49,16 @@ export type ISBN = {
   data: string;
 };
 
+export type GitHubUser = {
+  type: CommandTag.GitHubUser;
+  data: string;
+};
+
+export type GitHubRepository = {
+  type: CommandTag.GitHubRepository;
+  data: string;
+};
+
 export function Ping(): Ping {
   return {type: CommandTag.Ping};
 }
@@ -63,10 +83,25 @@ export function ISBN(data: string): ISBN {
   return {type: CommandTag.ISBN, data};
 }
 
+export function GitHubUser(data: string): GitHubUser {
+  return {type: CommandTag.GitHubUser, data};
+}
+
+export function GitHubRepository(data: string): GitHubRepository {
+  return {type: CommandTag.GitHubRepository, data};
+}
+
 export function isCommand(value: unknown): value is Command {
-  return [isPing, isWhoAreYou, isMovie, isPerson, isShow, isISBN].some((typePredicate) =>
-    typePredicate(value)
-  );
+  return [
+    isPing,
+    isWhoAreYou,
+    isMovie,
+    isPerson,
+    isShow,
+    isISBN,
+    isGitHubUser,
+    isGitHubRepository,
+  ].some((typePredicate) => typePredicate(value));
 }
 
 export function isPing(value: unknown): value is Ping {
@@ -93,6 +128,17 @@ export function isISBN(value: unknown): value is ISBN {
   return svt.isInterface<ISBN>(value, {type: CommandTag.ISBN, data: svt.isString});
 }
 
+export function isGitHubUser(value: unknown): value is GitHubUser {
+  return svt.isInterface<GitHubUser>(value, {type: CommandTag.GitHubUser, data: svt.isString});
+}
+
+export function isGitHubRepository(value: unknown): value is GitHubRepository {
+  return svt.isInterface<GitHubRepository>(value, {
+    type: CommandTag.GitHubRepository,
+    data: svt.isString,
+  });
+}
+
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
   return svt.validateOneOf<Command>(value, [
     validatePing,
@@ -101,6 +147,8 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
     validatePerson,
     validateShow,
     validateISBN,
+    validateGitHubUser,
+    validateGitHubRepository,
   ]);
 }
 
@@ -126,4 +174,15 @@ export function validateShow(value: unknown): svt.ValidationResult<Show> {
 
 export function validateISBN(value: unknown): svt.ValidationResult<ISBN> {
   return svt.validate<ISBN>(value, {type: CommandTag.ISBN, data: svt.validateString});
+}
+
+export function validateGitHubUser(value: unknown): svt.ValidationResult<GitHubUser> {
+  return svt.validate<GitHubUser>(value, {type: CommandTag.GitHubUser, data: svt.validateString});
+}
+
+export function validateGitHubRepository(value: unknown): svt.ValidationResult<GitHubRepository> {
+  return svt.validate<GitHubRepository>(value, {
+    type: CommandTag.GitHubRepository,
+    data: svt.validateString,
+  });
 }

@@ -1,4 +1,24 @@
-struct Owner {
+struct UserData {
+    login: String
+    id: U32
+    avatar_url: String
+    url: String
+    html_url: String
+    followers_url: String
+    gists_url: String
+    repos_url: String
+    site_admin: Boolean
+    bio: String
+    public_repos: U32
+    followers: U32
+    following: U32
+    created_at: String
+    updated_at: String
+    location: ?String
+    blog: ?String
+}
+
+struct OwnerData {
     id: U32
     login: String
     url: String
@@ -6,8 +26,21 @@ struct Owner {
     followers_url: String
     gists_url: String
     repos_url: String
-    type: String
     site_admin: Boolean
+}
+
+struct OrganizationData {
+    login: String
+    id: U32
+    avatar_url: String
+    members_url: String
+    repos_url: String
+    description: ?String
+}
+
+union(tag = type, embedded) Owner {
+    User: OwnerData
+    Organization: OrganizationData
 }
 
 struct Repository {
@@ -16,34 +49,13 @@ struct Repository {
     full_name: String
     private: Boolean
     fork: Boolean
-    created_at: U32
+    created_at: String
     updated_at: String
     description: ?String
     owner: Owner
     url: String
     html_url: String
-}
-
-struct User {
-    login: String
-    id: U32
-    avatar_url: String
-    url: String
-    html_url: String
-    followers_url: String
-    gists_url: String
-    repos_url: String
-    type: String
-    site_admin: Boolean
-}
-
-struct Organization {
-    login: String
-    id: U32
-    avatar_url: String
-    members_url: String
-    repos_url: String
-    description: ?String
+    language: String
 }
 
 struct Pusher {

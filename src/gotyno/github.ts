@@ -1,6 +1,70 @@
 import * as svt from "simple-validation-tools";
 
-export type Owner = {
+export type UserData = {
+  login: string;
+  id: number;
+  avatar_url: string;
+  url: string;
+  html_url: string;
+  followers_url: string;
+  gists_url: string;
+  repos_url: string;
+  site_admin: boolean;
+  bio: string;
+  public_repos: number;
+  followers: number;
+  following: number;
+  created_at: string;
+  updated_at: string;
+  location: string | null | undefined;
+  blog: string | null | undefined;
+};
+
+export function isUserData(value: unknown): value is UserData {
+  return svt.isInterface<UserData>(value, {
+    login: svt.isString,
+    id: svt.isNumber,
+    avatar_url: svt.isString,
+    url: svt.isString,
+    html_url: svt.isString,
+    followers_url: svt.isString,
+    gists_url: svt.isString,
+    repos_url: svt.isString,
+    site_admin: svt.isBoolean,
+    bio: svt.isString,
+    public_repos: svt.isNumber,
+    followers: svt.isNumber,
+    following: svt.isNumber,
+    created_at: svt.isString,
+    updated_at: svt.isString,
+    location: svt.optional(svt.isString),
+    blog: svt.optional(svt.isString),
+  });
+}
+
+export function validateUserData(value: unknown): svt.ValidationResult<UserData> {
+  return svt.validate<UserData>(value, {
+    login: svt.validateString,
+    id: svt.validateNumber,
+    avatar_url: svt.validateString,
+    url: svt.validateString,
+    html_url: svt.validateString,
+    followers_url: svt.validateString,
+    gists_url: svt.validateString,
+    repos_url: svt.validateString,
+    site_admin: svt.validateBoolean,
+    bio: svt.validateString,
+    public_repos: svt.validateNumber,
+    followers: svt.validateNumber,
+    following: svt.validateNumber,
+    created_at: svt.validateString,
+    updated_at: svt.validateString,
+    location: svt.validateOptional(svt.validateString),
+    blog: svt.validateOptional(svt.validateString),
+  });
+}
+
+export type OwnerData = {
   id: number;
   login: string;
   url: string;
@@ -8,12 +72,11 @@ export type Owner = {
   followers_url: string;
   gists_url: string;
   repos_url: string;
-  type: string;
   site_admin: boolean;
 };
 
-export function isOwner(value: unknown): value is Owner {
-  return svt.isInterface<Owner>(value, {
+export function isOwnerData(value: unknown): value is OwnerData {
+  return svt.isInterface<OwnerData>(value, {
     id: svt.isNumber,
     login: svt.isString,
     url: svt.isString,
@@ -21,13 +84,12 @@ export function isOwner(value: unknown): value is Owner {
     followers_url: svt.isString,
     gists_url: svt.isString,
     repos_url: svt.isString,
-    type: svt.isString,
     site_admin: svt.isBoolean,
   });
 }
 
-export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
-  return svt.validate<Owner>(value, {
+export function validateOwnerData(value: unknown): svt.ValidationResult<OwnerData> {
+  return svt.validate<OwnerData>(value, {
     id: svt.validateNumber,
     login: svt.validateString,
     url: svt.validateString,
@@ -35,8 +97,135 @@ export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
     followers_url: svt.validateString,
     gists_url: svt.validateString,
     repos_url: svt.validateString,
-    type: svt.validateString,
     site_admin: svt.validateBoolean,
+  });
+}
+
+export type OrganizationData = {
+  login: string;
+  id: number;
+  avatar_url: string;
+  members_url: string;
+  repos_url: string;
+  description: string | null | undefined;
+};
+
+export function isOrganizationData(value: unknown): value is OrganizationData {
+  return svt.isInterface<OrganizationData>(value, {
+    login: svt.isString,
+    id: svt.isNumber,
+    avatar_url: svt.isString,
+    members_url: svt.isString,
+    repos_url: svt.isString,
+    description: svt.optional(svt.isString),
+  });
+}
+
+export function validateOrganizationData(value: unknown): svt.ValidationResult<OrganizationData> {
+  return svt.validate<OrganizationData>(value, {
+    login: svt.validateString,
+    id: svt.validateNumber,
+    avatar_url: svt.validateString,
+    members_url: svt.validateString,
+    repos_url: svt.validateString,
+    description: svt.validateOptional(svt.validateString),
+  });
+}
+
+export type Owner = User | Organization;
+
+export enum OwnerTag {
+  User = "User",
+  Organization = "Organization",
+}
+
+export type User = {
+  type: OwnerTag.User;
+  id: number;
+  login: string;
+  url: string;
+  html_url: string;
+  followers_url: string;
+  gists_url: string;
+  repos_url: string;
+  site_admin: boolean;
+};
+
+export type Organization = {
+  type: OwnerTag.Organization;
+  login: string;
+  id: number;
+  avatar_url: string;
+  members_url: string;
+  repos_url: string;
+  description: string | null | undefined;
+};
+
+export function User(data: OwnerData): User {
+  return {type: OwnerTag.User, ...data};
+}
+
+export function Organization(data: OrganizationData): Organization {
+  return {type: OwnerTag.Organization, ...data};
+}
+
+export function isOwner(value: unknown): value is Owner {
+  return [isUser, isOrganization].some((typePredicate) => typePredicate(value));
+}
+
+export function isUser(value: unknown): value is User {
+  return svt.isInterface<User>(value, {
+    type: OwnerTag.User,
+    id: svt.isNumber,
+    login: svt.isString,
+    url: svt.isString,
+    html_url: svt.isString,
+    followers_url: svt.isString,
+    gists_url: svt.isString,
+    repos_url: svt.isString,
+    site_admin: svt.isBoolean,
+  });
+}
+
+export function isOrganization(value: unknown): value is Organization {
+  return svt.isInterface<Organization>(value, {
+    type: OwnerTag.Organization,
+    login: svt.isString,
+    id: svt.isNumber,
+    avatar_url: svt.isString,
+    members_url: svt.isString,
+    repos_url: svt.isString,
+    description: svt.optional(svt.isString),
+  });
+}
+
+export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
+  return svt.validateOneOf<Owner>(value, [validateUser, validateOrganization]);
+}
+
+export function validateUser(value: unknown): svt.ValidationResult<User> {
+  return svt.validate<User>(value, {
+    type: OwnerTag.User,
+    id: svt.validateNumber,
+    login: svt.validateString,
+    url: svt.validateString,
+    html_url: svt.validateString,
+    followers_url: svt.validateString,
+    gists_url: svt.validateString,
+    repos_url: svt.validateString,
+    site_admin: svt.validateBoolean,
+  });
+}
+
+export function validateOrganization(value: unknown): svt.ValidationResult<Organization> {
+  return svt.validate<Organization>(value, {
+    type: OwnerTag.Organization,
+    login: svt.validateString,
+    id: svt.validateNumber,
+    avatar_url: svt.validateString,
+    members_url: svt.validateString,
+    repos_url: svt.validateString,
+    description: svt.validateOptional(svt.validateString),
   });
 }
 
@@ -46,12 +235,13 @@ export type Repository = {
   full_name: string;
   private: boolean;
   fork: boolean;
-  created_at: number;
+  created_at: string;
   updated_at: string;
   description: string | null | undefined;
   owner: Owner;
   url: string;
   html_url: string;
+  language: string;
 };
 
 export function isRepository(value: unknown): value is Repository {
@@ -61,12 +251,13 @@ export function isRepository(value: unknown): value is Repository {
     full_name: svt.isString,
     private: svt.isBoolean,
     fork: svt.isBoolean,
-    created_at: svt.isNumber,
+    created_at: svt.isString,
     updated_at: svt.isString,
     description: svt.optional(svt.isString),
     owner: isOwner,
     url: svt.isString,
     html_url: svt.isString,
+    language: svt.isString,
   });
 }
 
@@ -77,86 +268,13 @@ export function validateRepository(value: unknown): svt.ValidationResult<Reposit
     full_name: svt.validateString,
     private: svt.validateBoolean,
     fork: svt.validateBoolean,
-    created_at: svt.validateNumber,
+    created_at: svt.validateString,
     updated_at: svt.validateString,
     description: svt.validateOptional(svt.validateString),
     owner: validateOwner,
     url: svt.validateString,
     html_url: svt.validateString,
-  });
-}
-
-export type User = {
-  login: string;
-  id: number;
-  avatar_url: string;
-  url: string;
-  html_url: string;
-  followers_url: string;
-  gists_url: string;
-  repos_url: string;
-  type: string;
-  site_admin: boolean;
-};
-
-export function isUser(value: unknown): value is User {
-  return svt.isInterface<User>(value, {
-    login: svt.isString,
-    id: svt.isNumber,
-    avatar_url: svt.isString,
-    url: svt.isString,
-    html_url: svt.isString,
-    followers_url: svt.isString,
-    gists_url: svt.isString,
-    repos_url: svt.isString,
-    type: svt.isString,
-    site_admin: svt.isBoolean,
-  });
-}
-
-export function validateUser(value: unknown): svt.ValidationResult<User> {
-  return svt.validate<User>(value, {
-    login: svt.validateString,
-    id: svt.validateNumber,
-    avatar_url: svt.validateString,
-    url: svt.validateString,
-    html_url: svt.validateString,
-    followers_url: svt.validateString,
-    gists_url: svt.validateString,
-    repos_url: svt.validateString,
-    type: svt.validateString,
-    site_admin: svt.validateBoolean,
-  });
-}
-
-export type Organization = {
-  login: string;
-  id: number;
-  avatar_url: string;
-  members_url: string;
-  repos_url: string;
-  description: string | null | undefined;
-};
-
-export function isOrganization(value: unknown): value is Organization {
-  return svt.isInterface<Organization>(value, {
-    login: svt.isString,
-    id: svt.isNumber,
-    avatar_url: svt.isString,
-    members_url: svt.isString,
-    repos_url: svt.isString,
-    description: svt.optional(svt.isString),
-  });
-}
-
-export function validateOrganization(value: unknown): svt.ValidationResult<Organization> {
-  return svt.validate<Organization>(value, {
-    login: svt.validateString,
-    id: svt.validateNumber,
-    avatar_url: svt.validateString,
-    members_url: svt.validateString,
-    repos_url: svt.validateString,
-    description: svt.validateOptional(svt.validateString),
+    language: svt.validateString,
   });
 }
 
