@@ -794,10 +794,10 @@ got@^9.6.0:
     to-readable-stream "^1.0.0"
     url-parse-lax "^3.0.0"
 
-gotyno@0.2.5:
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.2.5.tgz#7af191ade16b9339256834b51db4b25fd89e7d46"
-  integrity sha512-wDDPMIYAnvG9lvlEyO0Fs9b05x6qiC/0EaochtxqjPaKRQhrb0vGNOdRmmPZgi0+n0JYYDW3c8nV0/IPoJwvjg==
+gotyno@0.2.8:
+  version "0.2.8"
+  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.2.8.tgz#d016be7c0c55dd8563f65cf2428186b6ec0b968c"
+  integrity sha512-htP+lIlKSzNvdpwXhIvqKOXdujbm/CAoT1cLoc0YefjrXdkhhzGfggc90OxWQmTN3aZluqwhiZa6MVK8ZolASQ==
   dependencies:
     simple-validation-tools GoNZooo/simple-validation-tools#d68d0b11e16f3cc04bb3abf06869f2415d4f4371
 
