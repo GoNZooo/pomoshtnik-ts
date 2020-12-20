@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as commands from "./commands";
 import {assertUnreachable} from "./utilities";
-import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
 import express from "express";
 import {Command, CommandTag, ISBN, Movie, Person, Show} from "./gotyno/commands";
@@ -374,9 +373,9 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 export const handleISBNCommand = async (command: ISBN, message: Discord.Message): Promise<void> => {
   const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.data);
 
-  switch (maybeBook._tag) {
-    case "Right": {
-      const book = maybeBook.right;
+  switch (maybeBook.type) {
+    case "Valid": {
+      const book = maybeBook.value;
 
       const embed = new Discord.MessageEmbed({
         title: book.title,
@@ -395,8 +394,8 @@ export const handleISBNCommand = async (command: ISBN, message: Discord.Message)
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeBook));
+    case "Invalid": {
+      console.error("error:", maybeBook.errors);
 
       break;
     }
