@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon ./src/run.ts",
-    "build:types": "gotyno -ts src/gotyno/commands.gotyno src/gotyno/tmdb.gotyno src/gotyno/github.gotyno src/gotyno/isbndb.gotyno"
+    "build:types": "gotyno -ts src/gotyno/commands.gotyno src/gotyno/tmdb.gotyno src/gotyno/github.gotyno src/gotyno/isbndb.gotyno && yarn prettier --write src/gotyno/*.ts"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
