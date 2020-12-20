@@ -1,13 +1,12 @@
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
-import * as either from "fp-ts/lib/Either";
 import * as commands from "./commands";
 import {assertUnreachable} from "./utilities";
-import reporter from "io-ts-reporters";
 import * as isbndb from "./isbndb";
 import express from "express";
-import * as github from "./github";
+import {Command, CommandTag, ISBN, Movie, Person, Show} from "./gotyno/commands";
+import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
@@ -43,15 +42,15 @@ application.use(express.json());
 
 application.post("/github-webhook", async (request, response) => {
   const requestData = {
-    event: request.header("x-github-event") ?? "UnknownEvent",
-    body: request.body,
+    type: request.header("x-github-event") ?? "UnknownEvent",
+    data: request.body,
   };
-  const decodedEvent = github.WebhookEventFromRequestData.decode(requestData);
+  const decodedEvent = validatePush(requestData);
 
-  if (decodedEvent._tag === "Right") {
-    await handleGitHubWebhookEvent(decodedEvent.right, discordWebhook);
+  if (decodedEvent.type === "Valid") {
+    await handleGitHubWebhookEvent(decodedEvent.value, discordWebhook);
   } else {
-    console.error(`Unable to decode event event: ${reporter.report(decodedEvent)}`);
+    console.error("Unable to decode event:", decodedEvent.errors);
   }
 
   response.sendStatus(OK_STATUS);
@@ -64,27 +63,24 @@ let tmdbImageBaseUrl: string;
 discordClient.on("ready", async () => {
   const configurationResponse = await tmdb.getConfiguration(tmdbApiKey);
 
-  console.error(reporter.report(configurationResponse));
-
-  if (either.isRight(configurationResponse)) {
-    tmdbImageBaseUrl = `${configurationResponse.right.images.secure_base_url}`;
+  if (configurationResponse.type === "Invalid") {
+    console.error("Error fetching configuration:", configurationResponse.errors);
+  } else {
+    tmdbImageBaseUrl = `${configurationResponse.value.images.secure_base_url}`;
   }
 
   console.log(`Logged in as: ${discordClient.user?.tag ?? "N/A"}!`);
 });
 
-const handleCommand = async (
-  command: commands.Command,
-  message: Discord.Message
-): Promise<void> => {
+const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   switch (command.type) {
-    case "!ping": {
+    case CommandTag.Ping: {
       await message.reply("Pong!");
 
       return;
     }
 
-    case "!whoareyou": {
+    case CommandTag.WhoAreYou: {
       const embed = new Discord.MessageEmbed({
         image: {
           url: "https://cms.qz.com/wp-content/uploads/2015/11/rtxm3g2.jpg",
@@ -96,25 +92,25 @@ const handleCommand = async (
       return;
     }
 
-    case "!person": {
+    case CommandTag.Person: {
       await handlePersonCommand(command, message);
 
       return;
     }
 
-    case "!movie": {
+    case CommandTag.Movie: {
       await handleMovieCommand(command, message);
 
       return;
     }
 
-    case "!show": {
+    case CommandTag.Show: {
       await handleShowCommand(command, message);
 
       return;
     }
 
-    case "!isbn": {
+    case CommandTag.ISBN: {
       await handleISBNCommand(command, message);
 
       return;
@@ -127,17 +123,17 @@ const handleCommand = async (
 
 discordClient.on("message", async (message) => {
   if (!message.author.bot) {
-    const decodedCommand = commands.CommandFromList.decode(message.content.split(" "));
+    const decodedCommand = commands.commandFromStrings(message.content.split(" "));
 
-    switch (decodedCommand._tag) {
-      case "Right": {
-        await handleCommand(decodedCommand.right, message);
+    switch (decodedCommand.type) {
+      case "Valid": {
+        await handleCommand(decodedCommand.value, message);
 
         break;
       }
 
-      case "Left": {
-        console.error("Unable to decode message:", reporter.report(decodedCommand));
+      case "Invalid": {
+        console.error("Unable to decode message:", decodedCommand.errors);
 
         break;
       }
@@ -155,20 +151,17 @@ discordClient
     console.error("Unable to log in:", error);
   });
 
-const handlePersonCommand = async (
-  command: commands.PersonCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.name);
+const handlePersonCommand = async (command: Person, message: Discord.Message): Promise<void> => {
+  const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.data);
 
-  switch (maybePeople._tag) {
-    case "Right": {
-      if (maybePeople.right.length > 0) {
-        const personCandidate = maybePeople.right[0];
+  switch (maybePeople.type) {
+    case "Valid": {
+      if (maybePeople.value.length > 0) {
+        const personCandidate = maybePeople.value[0];
         const maybePerson = await tmdb.getPerson(tmdbApiKey, personCandidate.id);
-        switch (maybePerson._tag) {
-          case "Right": {
-            const person = maybePerson.right;
+        switch (maybePerson.type) {
+          case "Valid": {
+            const person = maybePerson.value;
             const posterUrl =
               personCandidate.profile_path !== null
                 ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
@@ -200,7 +193,7 @@ const handlePersonCommand = async (
             break;
           }
 
-          case "Left": {
+          case "Invalid": {
             break;
           }
 
@@ -208,14 +201,14 @@ const handlePersonCommand = async (
             assertUnreachable(maybePerson);
         }
       } else {
-        await message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.data}'.`);
       }
 
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybePeople).join(" "));
+    case "Invalid": {
+      console.error("error:", maybePeople.errors);
 
       break;
     }
@@ -226,15 +219,15 @@ const handlePersonCommand = async (
 };
 
 export const handleMovieCommand = async (
-  command: commands.MovieCommand,
+  command: Movie,
   message: Discord.Message
 ): Promise<void> => {
-  const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.name);
+  const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.data);
 
-  switch (maybeMovies._tag) {
-    case "Right": {
-      if (maybeMovies.right.length > 0) {
-        const movieCandidate = maybeMovies.right[0];
+  switch (maybeMovies.type) {
+    case "Valid": {
+      if (maybeMovies.value.length > 0) {
+        const movieCandidate = maybeMovies.value[0];
 
         const posterUrl =
           movieCandidate.poster_path !== null
@@ -243,9 +236,9 @@ export const handleMovieCommand = async (
 
         const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
 
-        switch (maybeMovie._tag) {
-          case "Right": {
-            const movie = maybeMovie.right;
+        switch (maybeMovie.type) {
+          case "Valid": {
+            const movie = maybeMovie.value;
 
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
@@ -264,8 +257,8 @@ export const handleMovieCommand = async (
             break;
           }
 
-          case "Left": {
-            console.error(reporter.report(maybeMovie));
+          case "Invalid": {
+            console.error(maybeMovie.errors);
 
             break;
           }
@@ -274,14 +267,14 @@ export const handleMovieCommand = async (
             assertUnreachable(maybeMovie);
         }
       } else {
-        await message.reply(`No results returned for '${command.name}'.`);
+        await message.reply(`No results returned for '${command.data}'.`);
       }
 
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeMovies).join("\n"));
+    case "Invalid": {
+      console.error("error:", maybeMovies.errors);
 
       break;
     }
@@ -291,16 +284,13 @@ export const handleMovieCommand = async (
   }
 };
 
-export const handleShowCommand = async (
-  command: commands.ShowCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybeShows = await tmdb.searchShow(tmdbApiKey, command.name);
+export const handleShowCommand = async (command: Show, message: Discord.Message): Promise<void> => {
+  const maybeShows = await tmdb.searchShow(tmdbApiKey, command.data);
 
-  switch (maybeShows._tag) {
-    case "Right": {
-      if (maybeShows.right.length > 0) {
-        const showCandidate = maybeShows.right[0];
+  switch (maybeShows.type) {
+    case "Valid": {
+      if (maybeShows.value.length > 0) {
+        const showCandidate = maybeShows.value[0];
 
         const posterUrl =
           showCandidate.poster_path !== null
@@ -309,9 +299,9 @@ export const handleShowCommand = async (
 
         const maybeShow = await tmdb.getShow(tmdbApiKey, showCandidate.id);
 
-        switch (maybeShow._tag) {
-          case "Right": {
-            const show = maybeShow.right;
+        switch (maybeShow.type) {
+          case "Valid": {
+            const show = maybeShow.value;
 
             const lastEpisode = show.last_episode_to_air;
 
@@ -352,8 +342,8 @@ export const handleShowCommand = async (
             break;
           }
 
-          case "Left": {
-            console.error(`Unable to get credits: ${reporter.report(maybeShow)}`);
+          case "Invalid": {
+            console.error(`Unable to get credits: ${maybeShow.errors}`);
 
             break;
           }
@@ -363,12 +353,14 @@ export const handleShowCommand = async (
         }
 
         break;
+      } else {
+        await message.reply(`No results returned for '${command.data}'.`);
       }
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeShows).join("\n"));
+    case "Invalid": {
+      console.error("error:", maybeShows.errors);
 
       break;
     }
@@ -378,15 +370,12 @@ export const handleShowCommand = async (
   }
 };
 
-export const handleISBNCommand = async (
-  command: commands.ISBNCommand,
-  message: Discord.Message
-): Promise<void> => {
-  const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.isbn);
+export const handleISBNCommand = async (command: ISBN, message: Discord.Message): Promise<void> => {
+  const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.data);
 
-  switch (maybeBook._tag) {
-    case "Right": {
-      const book = maybeBook.right;
+  switch (maybeBook.type) {
+    case "Valid": {
+      const book = maybeBook.value;
 
       const embed = new Discord.MessageEmbed({
         title: book.title,
@@ -405,8 +394,8 @@ export const handleISBNCommand = async (
       break;
     }
 
-    case "Left": {
-      console.error("error:", reporter.report(maybeBook));
+    case "Invalid": {
+      console.error("error:", maybeBook.errors);
 
       break;
     }
@@ -417,27 +406,19 @@ export const handleISBNCommand = async (
 };
 
 const handleGitHubWebhookEvent = async (
-  event: github.WebhookEvent,
+  event: WebhookEvent,
   hook: Discord.WebhookClient
 ): Promise<void> => {
-  switch (event.event_type) {
-    case "RepositoryCreated": {
-      const description = `${event.sender.login} created a repository: ${event.repository.name}`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PushedToRepository": {
-      const commitLines = event.commits
+  switch (event.type) {
+    case WebhookEventTag.push: {
+      const commitLines = event.data.commits
         .reverse()
         .slice(0, MAX_COMMITS_DESCRIPTION)
         .map((c) => `[${c.id}](${c.url})\n**${truncateCommitMessage(c.message)}**`)
         .join("\n---\n");
       const nameIndex = 2;
-      const refName = event.ref.split("/")[nameIndex];
-      const description = `${event.sender.login} pushed to a repository: [${event.repository.name}/${refName}](${event.head_commit.url})`;
+      const refName = event.data.ref.split("/")[nameIndex];
+      const description = `${event.data.sender.login} pushed to a repository: [${event.data.repository.name}/${refName}](${event.data.head_commit.url})`;
       const content = [description, commitLines].join("\n");
 
       await hook.send(content);
@@ -445,53 +426,8 @@ const handleGitHubWebhookEvent = async (
       break;
     }
 
-    case "IssueOpened": {
-      const description = `${event.sender.login} opened an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "IssueClosed": {
-      const description = `${event.sender.login} closed an issue in [${event.repository.name}](${event.issue.repository_url}): [${event.issue.title}](${event.issue.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestOpened": {
-      const description = `${event.sender.login} opened a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestMerged": {
-      const description = `${event.sender.login} merged a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "PullRequestClosed": {
-      const description = `${event.sender.login} closed a pull request in [${event.repository.name}](${event.repository.html_url}): [${event.pull_request.title}](${event.pull_request.html_url})`;
-      const embed = new Discord.MessageEmbed({description});
-      await hook.send(embed);
-
-      break;
-    }
-
-    case "UnknownEvent": {
-      console.error("Unknown event:", event);
-      break;
-    }
-
     default:
-      assertUnreachable(event);
+      assertUnreachable(event.type);
   }
 };
 

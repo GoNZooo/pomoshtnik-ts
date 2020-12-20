@@ -1,10 +1,11 @@
 {
   "name": "pomoshtnik",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "src/run.ts",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon ./src/run.ts"
+    "dev": "nodemon ./src/run.ts",
+    "build:types": "gotyno -ts src/gotyno/commands.gotyno src/gotyno/tmdb.gotyno src/gotyno/github.gotyno src/gotyno/isbndb.gotyno"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
@@ -22,9 +23,7 @@
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "fp-ts": "^2.7.0",
-    "io-ts": "^2.2.8",
-    "io-ts-reporters": "^1.2.1",
+    "gotyno": "0.2.8",
     "isomorphic-fetch": "^2.2.1"
   }
 }

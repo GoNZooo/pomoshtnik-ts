@@ -1,0 +1,8 @@
+union Command {
+    Ping
+    WhoAreYou
+    Movie: String
+    Person: String
+    Show: String
+    ISBN: String
+}
