@@ -7,8 +7,7 @@ import {
   ProfileSize,
   StillSize,
   validateConfigurationData,
-  validateMovie,
-  Movie,
+  MovieData,
   Show,
   validateShow,
   validatePerson,
@@ -19,6 +18,7 @@ import {
   validateShowSearchResult,
   validatePersonSearchResult,
   validateMovieSearchResult,
+  validateMovieData,
 } from "./gotyno/tmdb";
 
 const apiUrl = "https://api.themoviedb.org/3/";
@@ -105,13 +105,13 @@ export const getPerson = async (
 export const getMovie = async (
   apiKey: string,
   id: number
-): Promise<svt.ValidationResult<Movie>> => {
+): Promise<svt.ValidationResult<MovieData>> => {
   const result = await fetch(
     `${apiUrl}movie/${id}?language=en-US&append_to_response=credits&api_key=${apiKey}`
   );
   const json = await result.json();
 
-  return validateMovie(json);
+  return validateMovieData(json);
 };
 
 export const getShow = async (apiKey: string, id: number): Promise<svt.ValidationResult<Show>> => {

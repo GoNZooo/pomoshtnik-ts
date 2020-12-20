@@ -244,7 +244,7 @@ export function validateCredits(value: unknown): svt.ValidationResult<Credits> {
   });
 }
 
-export type Movie = {
+export type MovieData = {
   poster_path: string | null | undefined;
   id: number;
   imdb_id: string;
@@ -255,8 +255,8 @@ export type Movie = {
   credits: Credits;
 };
 
-export function isMovie(value: unknown): value is Movie {
-  return svt.isInterface<Movie>(value, {
+export function isMovieData(value: unknown): value is MovieData {
+  return svt.isInterface<MovieData>(value, {
     poster_path: svt.optional(svt.isString),
     id: svt.isNumber,
     imdb_id: svt.isString,
@@ -268,8 +268,8 @@ export function isMovie(value: unknown): value is Movie {
   });
 }
 
-export function validateMovie(value: unknown): svt.ValidationResult<Movie> {
-  return svt.validate<Movie>(value, {
+export function validateMovieData(value: unknown): svt.ValidationResult<MovieData> {
+  return svt.validate<MovieData>(value, {
     poster_path: svt.validateOptional(svt.validateString),
     id: svt.validateNumber,
     imdb_id: svt.validateString,
@@ -482,8 +482,7 @@ export function validateShowCandidate(value: unknown): svt.ValidationResult<Show
   });
 }
 
-export type KnownForMovie = {
-  media_type: "movie";
+export type KnownForMovieData = {
   poster_path: string | null | undefined;
   id: number;
   title: string | null | undefined;
@@ -492,9 +491,8 @@ export type KnownForMovie = {
   overview: string;
 };
 
-export function isKnownForMovie(value: unknown): value is KnownForMovie {
-  return svt.isInterface<KnownForMovie>(value, {
-    media_type: "movie",
+export function isKnownForMovieData(value: unknown): value is KnownForMovieData {
+  return svt.isInterface<KnownForMovieData>(value, {
     poster_path: svt.optional(svt.isString),
     id: svt.isNumber,
     title: svt.optional(svt.isString),
@@ -504,9 +502,8 @@ export function isKnownForMovie(value: unknown): value is KnownForMovie {
   });
 }
 
-export function validateKnownForMovie(value: unknown): svt.ValidationResult<KnownForMovie> {
-  return svt.validate<KnownForMovie>(value, {
-    media_type: "movie",
+export function validateKnownForMovieData(value: unknown): svt.ValidationResult<KnownForMovieData> {
+  return svt.validate<KnownForMovieData>(value, {
     poster_path: svt.validateOptional(svt.validateString),
     id: svt.validateNumber,
     title: svt.validateOptional(svt.validateString),
@@ -516,8 +513,7 @@ export function validateKnownForMovie(value: unknown): svt.ValidationResult<Know
   });
 }
 
-export type KnownForShow = {
-  media_type: "tv";
+export type KnownForShowData = {
   poster_path: string | null | undefined;
   id: number;
   vote_average: number;
@@ -526,9 +522,8 @@ export type KnownForShow = {
   name: string | null | undefined;
 };
 
-export function isKnownForShow(value: unknown): value is KnownForShow {
-  return svt.isInterface<KnownForShow>(value, {
-    media_type: "tv",
+export function isKnownForShowData(value: unknown): value is KnownForShowData {
+  return svt.isInterface<KnownForShowData>(value, {
     poster_path: svt.optional(svt.isString),
     id: svt.isNumber,
     vote_average: svt.isNumber,
@@ -538,9 +533,8 @@ export function isKnownForShow(value: unknown): value is KnownForShow {
   });
 }
 
-export function validateKnownForShow(value: unknown): svt.ValidationResult<KnownForShow> {
-  return svt.validate<KnownForShow>(value, {
-    media_type: "tv",
+export function validateKnownForShowData(value: unknown): svt.ValidationResult<KnownForShowData> {
+  return svt.validate<KnownForShowData>(value, {
     poster_path: svt.validateOptional(svt.validateString),
     id: svt.validateNumber,
     vote_average: svt.validateNumber,
@@ -550,14 +544,95 @@ export function validateKnownForShow(value: unknown): svt.ValidationResult<Known
   });
 }
 
-export type KnownFor = KnownForShow | KnownForMovie;
+export type KnownFor = movie | tv;
+
+export enum KnownForTag {
+  movie = "movie",
+  tv = "tv",
+}
+
+export type movie = {
+  media_type: KnownForTag.movie;
+  poster_path: string | null | undefined;
+  id: number;
+  title: string | null | undefined;
+  vote_average: number;
+  release_date: string | null | undefined;
+  overview: string;
+};
+
+export type tv = {
+  media_type: KnownForTag.tv;
+  poster_path: string | null | undefined;
+  id: number;
+  vote_average: number;
+  overview: string;
+  first_air_date: string | null | undefined;
+  name: string | null | undefined;
+};
+
+export function movie(data: KnownForMovieData): movie {
+  return {media_type: KnownForTag.movie, ...data};
+}
+
+export function tv(data: KnownForShowData): tv {
+  return {media_type: KnownForTag.tv, ...data};
+}
 
 export function isKnownFor(value: unknown): value is KnownFor {
-  return [isKnownForShow, isKnownForMovie].some((typePredicate) => typePredicate(value));
+  return [isMovie, isTv].some((typePredicate) => typePredicate(value));
+}
+
+export function isMovie(value: unknown): value is movie {
+  return svt.isInterface<movie>(value, {
+    media_type: KnownForTag.movie,
+    poster_path: svt.optional(svt.isString),
+    id: svt.isNumber,
+    title: svt.optional(svt.isString),
+    vote_average: svt.isNumber,
+    release_date: svt.optional(svt.isString),
+    overview: svt.isString,
+  });
+}
+
+export function isTv(value: unknown): value is tv {
+  return svt.isInterface<tv>(value, {
+    media_type: KnownForTag.tv,
+    poster_path: svt.optional(svt.isString),
+    id: svt.isNumber,
+    vote_average: svt.isNumber,
+    overview: svt.isString,
+    first_air_date: svt.optional(svt.isString),
+    name: svt.optional(svt.isString),
+  });
 }
 
 export function validateKnownFor(value: unknown): svt.ValidationResult<KnownFor> {
-  return svt.validateOneOf<KnownFor>(value, [validateKnownForShow, validateKnownForMovie]);
+  return svt.validateOneOf<KnownFor>(value, [validateMovie, validateTv]);
+}
+
+export function validateMovie(value: unknown): svt.ValidationResult<movie> {
+  return svt.validate<movie>(value, {
+    media_type: KnownForTag.movie,
+    poster_path: svt.validateOptional(svt.validateString),
+    id: svt.validateNumber,
+    title: svt.validateOptional(svt.validateString),
+    vote_average: svt.validateNumber,
+    release_date: svt.validateOptional(svt.validateString),
+    overview: svt.validateString,
+  });
+}
+
+export function validateTv(value: unknown): svt.ValidationResult<tv> {
+  return svt.validate<tv>(value, {
+    media_type: KnownForTag.tv,
+    poster_path: svt.validateOptional(svt.validateString),
+    id: svt.validateNumber,
+    vote_average: svt.validateNumber,
+    overview: svt.validateString,
+    first_air_date: svt.validateOptional(svt.validateString),
+    name: svt.validateOptional(svt.validateString),
+  });
 }
 
 export type PersonCandidate = {
