@@ -1,7 +1,7 @@
 {
   "name": "pomoshtnik",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "src/run.ts",
   "license": "MIT",
   "scripts": {
     "dev": "nodemon ./src/run.ts",
