@@ -90,7 +90,6 @@ async function handleGitHubUserCommand(
 
   if (userResult.type === "Valid") {
     const user = userResult.value;
-    console.log("user:", user);
 
     const embed = new Discord.MessageEmbed({
       title: user.login,
@@ -127,7 +126,6 @@ async function handleGitHubRepositoryCommand(
 
   if (repositoryResult.type === "Valid") {
     const repository = repositoryResult.value;
-    console.log("repository:", repository);
 
     const embed = new Discord.MessageEmbed({
       title: repository.full_name,
