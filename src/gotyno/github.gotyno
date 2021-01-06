@@ -85,12 +85,12 @@ struct Issue {
     repository_url: String
     number: U32
     title: String
-    user: User
+    user: UserData
     labels: []Label
     state: String
     locked: Boolean
-    assignee: ?User
-    assignees: []User
+    assignee: ?UserData
+    assignees: []UserData
     comments: U32
     created_at: String
     updated_at: String
@@ -119,8 +119,8 @@ struct PushData {
     before: String
     after: String
     pusher: Pusher
-    organization: Organization
-    sender: User
+    organization: OrganizationData
+    sender: UserData
     created: Boolean
     deleted: Boolean
     forced: Boolean
