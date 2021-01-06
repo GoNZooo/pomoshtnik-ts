@@ -140,16 +140,20 @@ export function isGitHubRepository(value: unknown): value is GitHubRepository {
 }
 
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
-  return svt.validateOneOf<Command>(value, [
-    validatePing,
-    validateWhoAreYou,
-    validateMovie,
-    validatePerson,
-    validateShow,
-    validateISBN,
-    validateGitHubUser,
-    validateGitHubRepository,
-  ]);
+  return svt.validateWithTypeTag<Command>(
+    value,
+    {
+      [CommandTag.Ping]: validatePing,
+      [CommandTag.WhoAreYou]: validateWhoAreYou,
+      [CommandTag.Movie]: validateMovie,
+      [CommandTag.Person]: validatePerson,
+      [CommandTag.Show]: validateShow,
+      [CommandTag.ISBN]: validateISBN,
+      [CommandTag.GitHubUser]: validateGitHubUser,
+      [CommandTag.GitHubRepository]: validateGitHubRepository,
+    },
+    "type"
+  );
 }
 
 export function validatePing(value: unknown): svt.ValidationResult<Ping> {

@@ -23,14 +23,14 @@ export function isPosterSize(value: unknown): value is PosterSize {
 }
 
 export function validatePosterSize(value: unknown): svt.ValidationResult<PosterSize> {
-  return svt.validateOneOf<PosterSize>(value, [
-    svt.validateConstant<PosterSize.w92>(PosterSize.w92),
-    svt.validateConstant<PosterSize.w154>(PosterSize.w154),
-    svt.validateConstant<PosterSize.w185>(PosterSize.w185),
-    svt.validateConstant<PosterSize.w342>(PosterSize.w342),
-    svt.validateConstant<PosterSize.w500>(PosterSize.w500),
-    svt.validateConstant<PosterSize.w780>(PosterSize.w780),
-    svt.validateConstant<PosterSize.original>(PosterSize.original),
+  return svt.validateOneOfLiterals<PosterSize>(value, [
+    PosterSize.w92,
+    PosterSize.w154,
+    PosterSize.w185,
+    PosterSize.w342,
+    PosterSize.w500,
+    PosterSize.w780,
+    PosterSize.original,
   ]);
 }
 
@@ -53,12 +53,12 @@ export function isProfileSize(value: unknown): value is ProfileSize {
 }
 
 export function validateProfileSize(value: unknown): svt.ValidationResult<ProfileSize> {
-  return svt.validateOneOf<ProfileSize>(value, [
-    svt.validateConstant<ProfileSize.w45>(ProfileSize.w45),
-    svt.validateConstant<ProfileSize.w185>(ProfileSize.w185),
-    svt.validateConstant<ProfileSize.w300>(ProfileSize.w300),
-    svt.validateConstant<ProfileSize.h632>(ProfileSize.h632),
-    svt.validateConstant<ProfileSize.original>(ProfileSize.original),
+  return svt.validateOneOfLiterals<ProfileSize>(value, [
+    ProfileSize.w45,
+    ProfileSize.w185,
+    ProfileSize.w300,
+    ProfileSize.h632,
+    ProfileSize.original,
   ]);
 }
 
@@ -77,12 +77,12 @@ export function isStillSize(value: unknown): value is StillSize {
 }
 
 export function validateStillSize(value: unknown): svt.ValidationResult<StillSize> {
-  return svt.validateOneOf<StillSize>(value, [
-    svt.validateConstant<StillSize.w92>(StillSize.w92),
-    svt.validateConstant<StillSize.w185>(StillSize.w185),
-    svt.validateConstant<StillSize.w300>(StillSize.w300),
-    svt.validateConstant<StillSize.h632>(StillSize.h632),
-    svt.validateConstant<StillSize.original>(StillSize.original),
+  return svt.validateOneOfLiterals<StillSize>(value, [
+    StillSize.w92,
+    StillSize.w185,
+    StillSize.w300,
+    StillSize.h632,
+    StillSize.original,
   ]);
 }
 
@@ -100,11 +100,11 @@ export function isBackdropSize(value: unknown): value is BackdropSize {
 }
 
 export function validateBackdropSize(value: unknown): svt.ValidationResult<BackdropSize> {
-  return svt.validateOneOf<BackdropSize>(value, [
-    svt.validateConstant<BackdropSize.w300>(BackdropSize.w300),
-    svt.validateConstant<BackdropSize.w780>(BackdropSize.w780),
-    svt.validateConstant<BackdropSize.w1280>(BackdropSize.w1280),
-    svt.validateConstant<BackdropSize.original>(BackdropSize.original),
+  return svt.validateOneOfLiterals<BackdropSize>(value, [
+    BackdropSize.w300,
+    BackdropSize.w780,
+    BackdropSize.w1280,
+    BackdropSize.original,
   ]);
 }
 
@@ -608,7 +608,11 @@ export function isTv(value: unknown): value is tv {
 }
 
 export function validateKnownFor(value: unknown): svt.ValidationResult<KnownFor> {
-  return svt.validateOneOf<KnownFor>(value, [validateMovie, validateTv]);
+  return svt.validateWithTypeTag<KnownFor>(
+    value,
+    {[KnownForTag.movie]: validateMovie, [KnownForTag.tv]: validateTv},
+    "media_type"
+  );
 }
 
 export function validateMovie(value: unknown): svt.ValidationResult<movie> {

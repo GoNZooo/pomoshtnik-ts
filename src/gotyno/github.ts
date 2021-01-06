@@ -200,7 +200,11 @@ export function isOrganization(value: unknown): value is Organization {
 }
 
 export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
-  return svt.validateOneOf<Owner>(value, [validateUser, validateOrganization]);
+  return svt.validateWithTypeTag<Owner>(
+    value,
+    {[OwnerTag.User]: validateUser, [OwnerTag.Organization]: validateOrganization},
+    "type"
+  );
 }
 
 export function validateUser(value: unknown): svt.ValidationResult<User> {
@@ -351,12 +355,12 @@ export type Issue = {
   repository_url: string;
   number: number;
   title: string;
-  user: User;
+  user: UserData;
   labels: Label[];
   state: string;
   locked: boolean;
-  assignee: User | null | undefined;
-  assignees: User[];
+  assignee: UserData | null | undefined;
+  assignees: UserData[];
   comments: number;
   created_at: string;
   updated_at: string;
@@ -373,12 +377,12 @@ export function isIssue(value: unknown): value is Issue {
     repository_url: svt.isString,
     number: svt.isNumber,
     title: svt.isString,
-    user: isUser,
+    user: isUserData,
     labels: svt.arrayOf(isLabel),
     state: svt.isString,
     locked: svt.isBoolean,
-    assignee: svt.optional(isUser),
-    assignees: svt.arrayOf(isUser),
+    assignee: svt.optional(isUserData),
+    assignees: svt.arrayOf(isUserData),
     comments: svt.isNumber,
     created_at: svt.isString,
     updated_at: svt.isString,
@@ -396,12 +400,12 @@ export function validateIssue(value: unknown): svt.ValidationResult<Issue> {
     repository_url: svt.validateString,
     number: svt.validateNumber,
     title: svt.validateString,
-    user: validateUser,
+    user: validateUserData,
     labels: svt.validateArray(validateLabel),
     state: svt.validateString,
     locked: svt.validateBoolean,
-    assignee: svt.validateOptional(validateUser),
-    assignees: svt.validateArray(validateUser),
+    assignee: svt.validateOptional(validateUserData),
+    assignees: svt.validateArray(validateUserData),
     comments: svt.validateNumber,
     created_at: svt.validateString,
     updated_at: svt.validateString,
@@ -463,8 +467,8 @@ export type PushData = {
   before: string;
   after: string;
   pusher: Pusher;
-  organization: Organization;
-  sender: User;
+  organization: OrganizationData;
+  sender: UserData;
   created: boolean;
   deleted: boolean;
   forced: boolean;
@@ -480,8 +484,8 @@ export function isPushData(value: unknown): value is PushData {
     before: svt.isString,
     after: svt.isString,
     pusher: isPusher,
-    organization: isOrganization,
-    sender: isUser,
+    organization: isOrganizationData,
+    sender: isUserData,
     created: svt.isBoolean,
     deleted: svt.isBoolean,
     forced: svt.isBoolean,
@@ -498,8 +502,8 @@ export function validatePushData(value: unknown): svt.ValidationResult<PushData>
     before: svt.validateString,
     after: svt.validateString,
     pusher: validatePusher,
-    organization: validateOrganization,
-    sender: validateUser,
+    organization: validateOrganizationData,
+    sender: validateUserData,
     created: svt.validateBoolean,
     deleted: svt.validateBoolean,
     forced: svt.validateBoolean,
@@ -533,7 +537,11 @@ export function isPush(value: unknown): value is push {
 }
 
 export function validateWebhookEvent(value: unknown): svt.ValidationResult<WebhookEvent> {
-  return svt.validateOneOf<WebhookEvent>(value, [validatePush]);
+  return svt.validateWithTypeTag<WebhookEvent>(
+    value,
+    {[WebhookEventTag.push]: validatePush},
+    "type"
+  );
 }
 
 export function validatePush(value: unknown): svt.ValidationResult<push> {
