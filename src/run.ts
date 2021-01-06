@@ -291,7 +291,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
     }
 
     case "Invalid": {
-      console.error("error:", maybePeople.errors);
+      console.error("error:", JSON.stringify(maybePeople.errors, null, JSON_STRINGIFY_SPACING));
 
       break;
     }
@@ -533,3 +533,5 @@ const MAX_COMMITS_DESCRIPTION = 8;
 const MAX_COMMIT_MESSAGE_LENGTH = 60;
 
 const OK_STATUS = 200;
+
+const JSON_STRINGIFY_SPACING = 2;
