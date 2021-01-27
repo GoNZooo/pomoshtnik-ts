@@ -1,4 +1,11 @@
-import {Repository, UserData, validateRepository, validateUserData} from "./gotyno/github";
+import {
+  Repository,
+  RepositorySearchData,
+  UserData,
+  validateRepository,
+  validateRepositorySearchData,
+  validateUserData,
+} from "./gotyno/github";
 import * as svt from "simple-validation-tools";
 import fetch from "isomorphic-fetch";
 
@@ -18,4 +25,14 @@ export async function getRepository(name: string): Promise<svt.ValidationResult<
   const json = await result.json();
 
   return validateRepository(json);
+}
+
+export async function searchRepositoriesByTopic(
+  topics: string[]
+): Promise<svt.ValidationResult<RepositorySearchData>> {
+  const url = API_URL + "/search/repositories?q=" + topics.map((t) => `topic:${t}`).join("+");
+  const result = await fetch(url);
+  const json = await result.json();
+
+  return validateRepositorySearchData(json);
 }

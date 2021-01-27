@@ -33,7 +33,7 @@ struct OrganizationData {
     login: String
     id: U32
     avatar_url: String
-    members_url: String
+    members_url: ?String
     repos_url: String
     description: ?String
 }
@@ -55,7 +55,7 @@ struct Repository {
     owner: Owner
     url: String
     html_url: String
-    language: String
+    language: ?String
 }
 
 struct Pusher {
@@ -131,4 +131,10 @@ struct PushData {
 
 union WebhookEvent {
     push: PushData
+}
+
+struct RepositorySearchData {
+    total_count: U32
+    incomplete_results: Boolean
+    items: []Repository
 }

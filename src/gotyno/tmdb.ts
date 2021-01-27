@@ -610,7 +610,10 @@ export function isTv(value: unknown): value is tv {
 export function validateKnownFor(value: unknown): svt.ValidationResult<KnownFor> {
   return svt.validateWithTypeTag<KnownFor>(
     value,
-    {[KnownForTag.movie]: validateMovie, [KnownForTag.tv]: validateTv},
+    {
+      [KnownForTag.movie]: validateMovie,
+      [KnownForTag.tv]: validateTv,
+    },
     "media_type"
   );
 }

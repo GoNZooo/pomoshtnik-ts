@@ -18,6 +18,7 @@ import {
   MovieSearch,
   Person,
   PersonSearch,
+  RepositorySearchTypeTag,
   Right,
   SearchCommand,
   SearchCommandTag,
@@ -25,7 +26,7 @@ import {
   ShowSearch,
 } from "./gotyno/commands";
 import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
-import {getRepository, getUser} from "./github";
+import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
 import {CastEntry} from "./gotyno/tmdb";
 
 const DEFAULT_APPLICATION_PORT = 3000;
@@ -135,26 +136,65 @@ async function handleGitHubRepositoryCommand(
   command: GitHubRepository,
   message: Discord.Message
 ): Promise<void> {
-  const repositoryResult = await getRepository(command.data);
+  switch (command.data.type) {
+    case RepositorySearchTypeTag.RepositoryByName: {
+      const repositoryResult = await getRepository(command.data.data);
 
-  if (repositoryResult.type === "Valid") {
-    const repository = repositoryResult.value;
-    searches.push(GitHubRepositorySearch(Right(repository)));
+      if (repositoryResult.type === "Valid") {
+        const repository = repositoryResult.value;
+        searches.push(GitHubRepositorySearch(Right(repository)));
 
-    const embed = new Discord.MessageEmbed({
-      title: repository.full_name,
-      url: repository.html_url,
-      footer: {},
-    });
+        const embed = new Discord.MessageEmbed({
+          title: repository.full_name,
+          url: repository.html_url,
+          footer: {},
+        });
 
-    embed.addField("Description", repository.description);
-    embed.addField("Creator", repository.owner.login);
-    embed.addField("Language", repository.language);
+        embed.addField("Description", repository.description);
+        embed.addField("Creator", repository.owner.login);
+        embed.addField("Language", repository.language);
 
-    await message.reply(embed);
-  } else {
-    searches.push(GitHubRepositorySearch(Left(command.data)));
-    console.error("Error fetching repository:", repositoryResult.errors);
+        await message.reply(embed);
+
+        return;
+      } else {
+        searches.push(GitHubRepositorySearch(Left(command.data.data)));
+        console.error(
+          "Error fetching repository:",
+          // tslint:disable-next-line:no-magic-numbers
+          JSON.stringify(repositoryResult.errors, null, 2)
+        );
+
+        return;
+      }
+    }
+
+    case RepositorySearchTypeTag.RepositoryByTopics: {
+      const repositoryResults = await searchRepositoriesByTopic(command.data.data);
+
+      if (repositoryResults.type === "Valid") {
+        const repositories = repositoryResults.value.items;
+
+        const lines = repositories.map((r) => `[${r.full_name}](${r.html_url})`);
+        const reply = lines.join("\n");
+        const embed = new Discord.MessageEmbed({description: reply});
+
+        await message.reply(embed);
+
+        return;
+      } else {
+        console.error(
+          "Error fetching repository:",
+          // tslint:disable-next-line:no-magic-numbers
+          JSON.stringify(repositoryResults.errors, null, 2)
+        );
+
+        return;
+      }
+    }
+
+    default:
+      assertUnreachable(command.data);
   }
 }
 
@@ -180,66 +220,70 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Searches: {
       const embed = new Discord.MessageEmbed();
-      const joinedSearches = searches
-        .map((searchCommand) => {
-          switch (searchCommand.type) {
-            case SearchCommandTag.GitHubUserSearch: {
-              if (searchCommand.data.type === "Right") {
-                const user = searchCommand.data.data;
+      if (searches.length === 0) {
+        embed.description = "No searches executed yet.";
+      } else {
+        const joinedSearches = searches
+          .map((searchCommand) => {
+            switch (searchCommand.type) {
+              case SearchCommandTag.GitHubUserSearch: {
+                if (searchCommand.data.type === "Right") {
+                  const user = searchCommand.data.data;
 
-                return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
-              } else {
-                return `GitHub user not found for search: ${searchCommand.data.data}`;
+                  return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
+                } else {
+                  return `GitHub user not found for search: ${searchCommand.data.data}`;
+                }
               }
-            }
 
-            case SearchCommandTag.GitHubRepositorySearch: {
-              if (searchCommand.data.type === "Right") {
-                const repository = searchCommand.data.data;
+              case SearchCommandTag.GitHubRepositorySearch: {
+                if (searchCommand.data.type === "Right") {
+                  const repository = searchCommand.data.data;
 
-                return `GitHub repository found: ${repository.url} (${repository.html_url})`;
-              } else {
-                return `GitHub repository not found for search: ${searchCommand.data.data}`;
+                  return `GitHub repository found: ${repository.url} (${repository.html_url})`;
+                } else {
+                  return `GitHub repository not found for search: ${searchCommand.data.data}`;
+                }
               }
-            }
 
-            case SearchCommandTag.PersonSearch: {
-              if (searchCommand.data.type === "Right") {
-                const person = searchCommand.data.data;
+              case SearchCommandTag.PersonSearch: {
+                if (searchCommand.data.type === "Right") {
+                  const person = searchCommand.data.data;
 
-                return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
-              } else {
-                return `Person not found for search: ${searchCommand.data.data}`;
+                  return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
+                } else {
+                  return `Person not found for search: ${searchCommand.data.data}`;
+                }
               }
-            }
 
-            case SearchCommandTag.MovieSearch: {
-              if (searchCommand.data.type === "Right") {
-                const movie = searchCommand.data.data;
+              case SearchCommandTag.MovieSearch: {
+                if (searchCommand.data.type === "Right") {
+                  const movie = searchCommand.data.data;
 
-                return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
-              } else {
-                return `Movie not found for search: ${searchCommand.data.data}`;
+                  return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
+                } else {
+                  return `Movie not found for search: ${searchCommand.data.data}`;
+                }
               }
-            }
 
-            case SearchCommandTag.ShowSearch: {
-              if (searchCommand.data.type === "Right") {
-                const show = searchCommand.data.data;
+              case SearchCommandTag.ShowSearch: {
+                if (searchCommand.data.type === "Right") {
+                  const show = searchCommand.data.data;
 
-                return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
-              } else {
-                return `Show not found for search: ${searchCommand.data.data}`;
+                  return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
+                } else {
+                  return `Show not found for search: ${searchCommand.data.data}`;
+                }
               }
+
+              default:
+                assertUnreachable(searchCommand);
             }
+          })
+          .join("\n\n");
 
-            default:
-              assertUnreachable(searchCommand);
-          }
-        })
-        .join("\n\n");
-
-      embed.addField("Searches", joinedSearches);
+        embed.addField("Searches", joinedSearches);
+      }
 
       await message.reply("Searches", embed);
 

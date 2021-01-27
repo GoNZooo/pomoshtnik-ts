@@ -105,7 +105,7 @@ export type OrganizationData = {
   login: string;
   id: number;
   avatar_url: string;
-  members_url: string;
+  members_url: string | null | undefined;
   repos_url: string;
   description: string | null | undefined;
 };
@@ -115,7 +115,7 @@ export function isOrganizationData(value: unknown): value is OrganizationData {
     login: svt.isString,
     id: svt.isNumber,
     avatar_url: svt.isString,
-    members_url: svt.isString,
+    members_url: svt.optional(svt.isString),
     repos_url: svt.isString,
     description: svt.optional(svt.isString),
   });
@@ -126,7 +126,7 @@ export function validateOrganizationData(value: unknown): svt.ValidationResult<O
     login: svt.validateString,
     id: svt.validateNumber,
     avatar_url: svt.validateString,
-    members_url: svt.validateString,
+    members_url: svt.validateOptional(svt.validateString),
     repos_url: svt.validateString,
     description: svt.validateOptional(svt.validateString),
   });
@@ -156,7 +156,7 @@ export type Organization = {
   login: string;
   id: number;
   avatar_url: string;
-  members_url: string;
+  members_url: string | null | undefined;
   repos_url: string;
   description: string | null | undefined;
 };
@@ -193,7 +193,7 @@ export function isOrganization(value: unknown): value is Organization {
     login: svt.isString,
     id: svt.isNumber,
     avatar_url: svt.isString,
-    members_url: svt.isString,
+    members_url: svt.optional(svt.isString),
     repos_url: svt.isString,
     description: svt.optional(svt.isString),
   });
@@ -202,7 +202,10 @@ export function isOrganization(value: unknown): value is Organization {
 export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
   return svt.validateWithTypeTag<Owner>(
     value,
-    {[OwnerTag.User]: validateUser, [OwnerTag.Organization]: validateOrganization},
+    {
+      [OwnerTag.User]: validateUser,
+      [OwnerTag.Organization]: validateOrganization,
+    },
     "type"
   );
 }
@@ -227,7 +230,7 @@ export function validateOrganization(value: unknown): svt.ValidationResult<Organ
     login: svt.validateString,
     id: svt.validateNumber,
     avatar_url: svt.validateString,
-    members_url: svt.validateString,
+    members_url: svt.validateOptional(svt.validateString),
     repos_url: svt.validateString,
     description: svt.validateOptional(svt.validateString),
   });
@@ -245,7 +248,7 @@ export type Repository = {
   owner: Owner;
   url: string;
   html_url: string;
-  language: string;
+  language: string | null | undefined;
 };
 
 export function isRepository(value: unknown): value is Repository {
@@ -261,7 +264,7 @@ export function isRepository(value: unknown): value is Repository {
     owner: isOwner,
     url: svt.isString,
     html_url: svt.isString,
-    language: svt.isString,
+    language: svt.optional(svt.isString),
   });
 }
 
@@ -278,7 +281,7 @@ export function validateRepository(value: unknown): svt.ValidationResult<Reposit
     owner: validateOwner,
     url: svt.validateString,
     html_url: svt.validateString,
-    language: svt.validateString,
+    language: svt.validateOptional(svt.validateString),
   });
 }
 
@@ -546,4 +549,28 @@ export function validateWebhookEvent(value: unknown): svt.ValidationResult<Webho
 
 export function validatePush(value: unknown): svt.ValidationResult<push> {
   return svt.validate<push>(value, {type: WebhookEventTag.push, data: validatePushData});
+}
+
+export type RepositorySearchData = {
+  total_count: number;
+  incomplete_results: boolean;
+  items: Repository[];
+};
+
+export function isRepositorySearchData(value: unknown): value is RepositorySearchData {
+  return svt.isInterface<RepositorySearchData>(value, {
+    total_count: svt.isNumber,
+    incomplete_results: svt.isBoolean,
+    items: svt.arrayOf(isRepository),
+  });
+}
+
+export function validateRepositorySearchData(
+  value: unknown
+): svt.ValidationResult<RepositorySearchData> {
+  return svt.validate<RepositorySearchData>(value, {
+    total_count: svt.validateNumber,
+    incomplete_results: svt.validateBoolean,
+    items: svt.validateArray(validateRepository),
+  });
 }

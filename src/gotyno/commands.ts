@@ -57,7 +57,10 @@ export function validateEither<L, R>(
   return function validateEitherLR(value: unknown): svt.ValidationResult<Either<L, R>> {
     return svt.validateWithTypeTag<Either<L, R>>(
       value,
-      {[EitherTag.Left]: validateLeft(validateL), [EitherTag.Right]: validateRight(validateR)},
+      {
+        [EitherTag.Left]: validateLeft(validateL),
+        [EitherTag.Right]: validateRight(validateR),
+      },
       "type"
     );
   };
@@ -119,7 +122,10 @@ export function validateMaybe<T>(validateT: svt.Validator<T>): svt.Validator<May
   return function validateMaybeT(value: unknown): svt.ValidationResult<Maybe<T>> {
     return svt.validateWithTypeTag<Maybe<T>>(
       value,
-      {[MaybeTag.Nothing]: validateNothing, [MaybeTag.Just]: validateJust(validateT)},
+      {
+        [MaybeTag.Nothing]: validateNothing,
+        [MaybeTag.Just]: validateJust(validateT),
+      },
       "type"
     );
   };
@@ -293,6 +299,78 @@ export function validateGitHubRepositorySearch(
   });
 }
 
+export type RepositorySearchType = RepositoryByName | RepositoryByTopics;
+
+export enum RepositorySearchTypeTag {
+  RepositoryByName = "RepositoryByName",
+  RepositoryByTopics = "RepositoryByTopics",
+}
+
+export type RepositoryByName = {
+  type: RepositorySearchTypeTag.RepositoryByName;
+  data: string;
+};
+
+export type RepositoryByTopics = {
+  type: RepositorySearchTypeTag.RepositoryByTopics;
+  data: string[];
+};
+
+export function RepositoryByName(data: string): RepositoryByName {
+  return {type: RepositorySearchTypeTag.RepositoryByName, data};
+}
+
+export function RepositoryByTopics(data: string[]): RepositoryByTopics {
+  return {type: RepositorySearchTypeTag.RepositoryByTopics, data};
+}
+
+export function isRepositorySearchType(value: unknown): value is RepositorySearchType {
+  return [isRepositoryByName, isRepositoryByTopics].some((typePredicate) => typePredicate(value));
+}
+
+export function isRepositoryByName(value: unknown): value is RepositoryByName {
+  return svt.isInterface<RepositoryByName>(value, {
+    type: RepositorySearchTypeTag.RepositoryByName,
+    data: svt.isString,
+  });
+}
+
+export function isRepositoryByTopics(value: unknown): value is RepositoryByTopics {
+  return svt.isInterface<RepositoryByTopics>(value, {
+    type: RepositorySearchTypeTag.RepositoryByTopics,
+    data: svt.arrayOf(svt.isString),
+  });
+}
+
+export function validateRepositorySearchType(
+  value: unknown
+): svt.ValidationResult<RepositorySearchType> {
+  return svt.validateWithTypeTag<RepositorySearchType>(
+    value,
+    {
+      [RepositorySearchTypeTag.RepositoryByName]: validateRepositoryByName,
+      [RepositorySearchTypeTag.RepositoryByTopics]: validateRepositoryByTopics,
+    },
+    "type"
+  );
+}
+
+export function validateRepositoryByName(value: unknown): svt.ValidationResult<RepositoryByName> {
+  return svt.validate<RepositoryByName>(value, {
+    type: RepositorySearchTypeTag.RepositoryByName,
+    data: svt.validateString,
+  });
+}
+
+export function validateRepositoryByTopics(
+  value: unknown
+): svt.ValidationResult<RepositoryByTopics> {
+  return svt.validate<RepositoryByTopics>(value, {
+    type: RepositorySearchTypeTag.RepositoryByTopics,
+    data: svt.validateArray(svt.validateString),
+  });
+}
+
 export type Command =
   | Ping
   | WhoAreYou
@@ -355,7 +433,7 @@ export type GitHubUser = {
 
 export type GitHubRepository = {
   type: CommandTag.GitHubRepository;
-  data: string;
+  data: RepositorySearchType;
 };
 
 export function Ping(): Ping {
@@ -390,7 +468,7 @@ export function GitHubUser(data: string): GitHubUser {
   return {type: CommandTag.GitHubUser, data};
 }
 
-export function GitHubRepository(data: string): GitHubRepository {
+export function GitHubRepository(data: RepositorySearchType): GitHubRepository {
   return {type: CommandTag.GitHubRepository, data};
 }
 
@@ -443,7 +521,7 @@ export function isGitHubUser(value: unknown): value is GitHubUser {
 export function isGitHubRepository(value: unknown): value is GitHubRepository {
   return svt.isInterface<GitHubRepository>(value, {
     type: CommandTag.GitHubRepository,
-    data: svt.isString,
+    data: isRepositorySearchType,
   });
 }
 
@@ -500,6 +578,6 @@ export function validateGitHubUser(value: unknown): svt.ValidationResult<GitHubU
 export function validateGitHubRepository(value: unknown): svt.ValidationResult<GitHubRepository> {
   return svt.validate<GitHubRepository>(value, {
     type: CommandTag.GitHubRepository,
-    data: svt.validateString,
+    data: validateRepositorySearchType,
   });
 }
