@@ -26,6 +26,7 @@ import {
 } from "./gotyno/commands";
 import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
 import {getRepository, getUser} from "./github";
+import {CastEntry} from "./gotyno/tmdb";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
@@ -416,7 +417,7 @@ export const handleMovieCommand = async (
 
             const castEntries = movie.credits.cast
               .slice(0, MAX_EMBED_CAST_ENTRIES)
-              .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+              .map((castEntry: CastEntry) => `**${castEntry.name}** as ${castEntry.character}`);
 
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));

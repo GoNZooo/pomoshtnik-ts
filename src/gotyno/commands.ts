@@ -157,12 +157,12 @@ export type PersonSearch = {
 
 export type MovieSearch = {
   type: SearchCommandTag.MovieSearch;
-  data: Either<string, tmdb.MovieCandidate>;
+  data: Either<string, tmdb.MovieData>;
 };
 
 export type ShowSearch = {
   type: SearchCommandTag.ShowSearch;
-  data: Either<string, tmdb.ShowCandidate>;
+  data: Either<string, tmdb.Show>;
 };
 
 export type GitHubUserSearch = {
@@ -179,11 +179,11 @@ export function PersonSearch(data: Either<string, tmdb.Person>): PersonSearch {
   return {type: SearchCommandTag.PersonSearch, data};
 }
 
-export function MovieSearch(data: Either<string, tmdb.MovieCandidate>): MovieSearch {
+export function MovieSearch(data: Either<string, tmdb.MovieData>): MovieSearch {
   return {type: SearchCommandTag.MovieSearch, data};
 }
 
-export function ShowSearch(data: Either<string, tmdb.ShowCandidate>): ShowSearch {
+export function ShowSearch(data: Either<string, tmdb.Show>): ShowSearch {
   return {type: SearchCommandTag.ShowSearch, data};
 }
 
@@ -217,14 +217,14 @@ export function isPersonSearch(value: unknown): value is PersonSearch {
 export function isMovieSearch(value: unknown): value is MovieSearch {
   return svt.isInterface<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
-    data: isEither(svt.isString, tmdb.isMovieCandidate),
+    data: isEither(svt.isString, tmdb.isMovieData),
   });
 }
 
 export function isShowSearch(value: unknown): value is ShowSearch {
   return svt.isInterface<ShowSearch>(value, {
     type: SearchCommandTag.ShowSearch,
-    data: isEither(svt.isString, tmdb.isShowCandidate),
+    data: isEither(svt.isString, tmdb.isShow),
   });
 }
 
@@ -266,14 +266,14 @@ export function validatePersonSearch(value: unknown): svt.ValidationResult<Perso
 export function validateMovieSearch(value: unknown): svt.ValidationResult<MovieSearch> {
   return svt.validate<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
-    data: validateEither(svt.validateString, tmdb.validateMovieCandidate),
+    data: validateEither(svt.validateString, tmdb.validateMovieData),
   });
 }
 
 export function validateShowSearch(value: unknown): svt.ValidationResult<ShowSearch> {
   return svt.validate<ShowSearch>(value, {
     type: SearchCommandTag.ShowSearch,
-    data: validateEither(svt.validateString, tmdb.validateShowCandidate),
+    data: validateEither(svt.validateString, tmdb.validateShow),
   });
 }
 

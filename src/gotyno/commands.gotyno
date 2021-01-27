@@ -13,7 +13,7 @@ union Maybe <T>{
 
 union SearchCommand {
     PersonSearch: Either<String, tmdb.Person>
-    MovieSearch: Either<String, tmdb.Movie>
+    MovieSearch: Either<String, tmdb.MovieData>
     ShowSearch: Either<String, tmdb.Show>
     GitHubUserSearch: Either<String, github.UserData>
     GitHubRepositorySearch: Either<String, github.Repository>
