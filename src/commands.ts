@@ -5,6 +5,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
   const commandMap: {[key: string]: CommandTag} = {
     "!ping": CommandTag.Ping,
     "!whoareyou": CommandTag.WhoAreYou,
+    "!searches": CommandTag.Searches,
     "!movie": CommandTag.Movie,
     "!person": CommandTag.Person,
     "!show": CommandTag.Show,

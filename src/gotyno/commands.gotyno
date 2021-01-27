@@ -1,6 +1,28 @@
+import tmdb
+import github
+
+union Either <L, R>{
+    Left: L
+    Right: R
+}
+
+union Maybe <T>{
+    Nothing
+    Just: T
+}
+
+union SearchCommand {
+    PersonSearch: Either<String, tmdb.Person>
+    MovieSearch: Either<String, tmdb.Movie>
+    ShowSearch: Either<String, tmdb.Show>
+    GitHubUserSearch: Either<String, github.UserData>
+    GitHubRepositorySearch: Either<String, github.Repository>
+}
+
 union Command {
     Ping
     WhoAreYou
+    Searches
     Movie: String
     Person: String
     Show: String

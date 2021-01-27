@@ -9,11 +9,20 @@ import {
   Command,
   CommandTag,
   GitHubRepository,
+  GitHubRepositorySearch,
   GitHubUser,
+  GitHubUserSearch,
   ISBN,
+  Left,
   Movie,
+  MovieSearch,
   Person,
+  PersonSearch,
+  Right,
+  SearchCommand,
+  SearchCommandTag,
   Show,
+  ShowSearch,
 } from "./gotyno/commands";
 import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
 import {getRepository, getUser} from "./github";
@@ -21,6 +30,8 @@ import {getRepository, getUser} from "./github";
 const DEFAULT_APPLICATION_PORT = 3000;
 
 dotenv.config();
+
+const searches: SearchCommand[] = [];
 
 const discordApiKey = process.env.DISCORD_API_KEY ?? "NOVALUE";
 if (discordApiKey === "NOVALUE") throw new Error("No Discord API key specified.");
@@ -90,6 +101,7 @@ async function handleGitHubUserCommand(
 
   if (userResult.type === "Valid") {
     const user = userResult.value;
+    searches.push(GitHubUserSearch(Right(userResult.value)));
 
     const embed = new Discord.MessageEmbed({
       title: user.login,
@@ -113,6 +125,7 @@ async function handleGitHubUserCommand(
 
     await message.reply(embed);
   } else {
+    searches.push(GitHubUserSearch(Left(command.data)));
     console.error("Error fetching user:", userResult.errors);
   }
 }
@@ -122,10 +135,10 @@ async function handleGitHubRepositoryCommand(
   message: Discord.Message
 ): Promise<void> {
   const repositoryResult = await getRepository(command.data);
-  console.log(repositoryResult);
 
   if (repositoryResult.type === "Valid") {
     const repository = repositoryResult.value;
+    searches.push(GitHubRepositorySearch(Right(repository)));
 
     const embed = new Discord.MessageEmbed({
       title: repository.full_name,
@@ -139,6 +152,7 @@ async function handleGitHubRepositoryCommand(
 
     await message.reply(embed);
   } else {
+    searches.push(GitHubRepositorySearch(Left(command.data)));
     console.error("Error fetching repository:", repositoryResult.errors);
   }
 }
@@ -159,6 +173,74 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
       });
 
       await message.reply("I am Pomoshtnik, the helper bot!", embed);
+
+      return;
+    }
+
+    case CommandTag.Searches: {
+      const embed = new Discord.MessageEmbed();
+      const joinedSearches = searches
+        .map((searchCommand) => {
+          switch (searchCommand.type) {
+            case SearchCommandTag.GitHubUserSearch: {
+              if (searchCommand.data.type === "Right") {
+                const user = searchCommand.data.data;
+
+                return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
+              } else {
+                return `GitHub user not found for search: ${searchCommand.data.data}`;
+              }
+            }
+
+            case SearchCommandTag.GitHubRepositorySearch: {
+              if (searchCommand.data.type === "Right") {
+                const repository = searchCommand.data.data;
+
+                return `GitHub repository found: ${repository.url} (${repository.html_url})`;
+              } else {
+                return `GitHub repository not found for search: ${searchCommand.data.data}`;
+              }
+            }
+
+            case SearchCommandTag.PersonSearch: {
+              if (searchCommand.data.type === "Right") {
+                const person = searchCommand.data.data;
+
+                return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
+              } else {
+                return `Person not found for search: ${searchCommand.data.data}`;
+              }
+            }
+
+            case SearchCommandTag.MovieSearch: {
+              if (searchCommand.data.type === "Right") {
+                const movie = searchCommand.data.data;
+
+                return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
+              } else {
+                return `Movie not found for search: ${searchCommand.data.data}`;
+              }
+            }
+
+            case SearchCommandTag.ShowSearch: {
+              if (searchCommand.data.type === "Right") {
+                const show = searchCommand.data.data;
+
+                return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
+              } else {
+                return `Show not found for search: ${searchCommand.data.data}`;
+              }
+            }
+
+            default:
+              assertUnreachable(searchCommand);
+          }
+        })
+        .join("\n\n");
+
+      embed.addField("Searches", joinedSearches);
+
+      await message.reply("Searches", embed);
 
       return;
     }
@@ -216,7 +298,7 @@ discordClient.on("message", async (message) => {
       }
 
       case "Invalid": {
-        console.error("Unable to decode message:", decodedCommand.errors);
+        await message.reply("Unable to recognize command.");
 
         break;
       }
@@ -245,6 +327,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
         switch (maybePerson.type) {
           case "Valid": {
             const person = maybePerson.value;
+            searches.push(PersonSearch(Right(person)));
             const posterUrl =
               personCandidate.profile_path !== null
                 ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
@@ -284,6 +367,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
             assertUnreachable(maybePerson);
         }
       } else {
+        searches.push(PersonSearch(Left(command.data)));
         await message.reply(`No results returned for '${command.data}'.`);
       }
 
@@ -322,6 +406,7 @@ export const handleMovieCommand = async (
         switch (maybeMovie.type) {
           case "Valid": {
             const movie = maybeMovie.value;
+            searches.push(MovieSearch(Right(movie)));
 
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
@@ -350,6 +435,7 @@ export const handleMovieCommand = async (
             assertUnreachable(maybeMovie);
         }
       } else {
+        searches.push(MovieSearch(Left(command.data)));
         await message.reply(`No results returned for '${command.data}'.`);
       }
 
@@ -385,6 +471,7 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
         switch (maybeShow.type) {
           case "Valid": {
             const show = maybeShow.value;
+            searches.push(ShowSearch(Right(show)));
 
             const lastEpisode = show.last_episode_to_air;
 
@@ -437,6 +524,7 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 
         break;
       } else {
+        searches.push(ShowSearch(Left(command.data)));
         await message.reply(`No results returned for '${command.data}'.`);
       }
       break;
