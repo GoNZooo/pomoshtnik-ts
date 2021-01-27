@@ -202,10 +202,7 @@ export function isOrganization(value: unknown): value is Organization {
 export function validateOwner(value: unknown): svt.ValidationResult<Owner> {
   return svt.validateWithTypeTag<Owner>(
     value,
-    {
-      [OwnerTag.User]: validateUser,
-      [OwnerTag.Organization]: validateOrganization,
-    },
+    {[OwnerTag.User]: validateUser, [OwnerTag.Organization]: validateOrganization},
     "type"
   );
 }

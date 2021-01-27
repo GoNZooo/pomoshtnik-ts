@@ -57,10 +57,7 @@ export function validateEither<L, R>(
   return function validateEitherLR(value: unknown): svt.ValidationResult<Either<L, R>> {
     return svt.validateWithTypeTag<Either<L, R>>(
       value,
-      {
-        [EitherTag.Left]: validateLeft(validateL),
-        [EitherTag.Right]: validateRight(validateR),
-      },
+      {[EitherTag.Left]: validateLeft(validateL), [EitherTag.Right]: validateRight(validateR)},
       "type"
     );
   };
@@ -122,10 +119,7 @@ export function validateMaybe<T>(validateT: svt.Validator<T>): svt.Validator<May
   return function validateMaybeT(value: unknown): svt.ValidationResult<Maybe<T>> {
     return svt.validateWithTypeTag<Maybe<T>>(
       value,
-      {
-        [MaybeTag.Nothing]: validateNothing,
-        [MaybeTag.Just]: validateJust(validateT),
-      },
+      {[MaybeTag.Nothing]: validateNothing, [MaybeTag.Just]: validateJust(validateT)},
       "type"
     );
   };
