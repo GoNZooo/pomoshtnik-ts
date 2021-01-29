@@ -6,11 +6,6 @@ union Either <L, R>{
     Right: R
 }
 
-union Maybe <T>{
-    Nothing
-    Just: T
-}
-
 union SearchCommand {
     PersonSearch: Either<String, tmdb.Person>
     MovieSearch: Either<String, tmdb.MovieData>
