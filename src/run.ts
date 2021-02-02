@@ -8,6 +8,7 @@ import express from "express";
 import {
   Command,
   CommandTag,
+  EitherTag,
   GitHubRepository,
   GitHubRepositorySearch,
   GitHubUser,
@@ -227,7 +228,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
           .map((searchCommand) => {
             switch (searchCommand.type) {
               case SearchCommandTag.GitHubUserSearch: {
-                if (searchCommand.data.type === "Right") {
+                if (searchCommand.data.type === EitherTag.Right) {
                   const user = searchCommand.data.data;
 
                   return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
@@ -237,7 +238,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
               }
 
               case SearchCommandTag.GitHubRepositorySearch: {
-                if (searchCommand.data.type === "Right") {
+                if (searchCommand.data.type === EitherTag.Right) {
                   const repository = searchCommand.data.data;
 
                   return `GitHub repository found: ${repository.url} (${repository.html_url})`;
@@ -247,7 +248,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
               }
 
               case SearchCommandTag.PersonSearch: {
-                if (searchCommand.data.type === "Right") {
+                if (searchCommand.data.type === EitherTag.Right) {
                   const person = searchCommand.data.data;
 
                   return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
@@ -257,7 +258,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
               }
 
               case SearchCommandTag.MovieSearch: {
-                if (searchCommand.data.type === "Right") {
+                if (searchCommand.data.type === EitherTag.Right) {
                   const movie = searchCommand.data.data;
 
                   return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
@@ -267,7 +268,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
               }
 
               case SearchCommandTag.ShowSearch: {
-                if (searchCommand.data.type === "Right") {
+                if (searchCommand.data.type === EitherTag.Right) {
                   const show = searchCommand.data.data;
 
                   return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
@@ -459,7 +460,7 @@ export const handleMovieCommand = async (
               image: {url: posterUrl},
             });
 
-            const castEntries = movie.credits.cast
+            const castEntries = (movie.credits.cast ?? [])
               .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry: CastEntry) => `**${castEntry.name}** as ${castEntry.character}`);
 
@@ -547,18 +548,31 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
             embed.addField("Description", show.overview);
             embed.addField("Last Episode", lastEpisodeDescription);
 
-            const castEntries = show.credits.cast
+            const castEntries = (show.credits.cast ?? [])
               .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
 
             embed.addField("Cast", castEntries.join("\n"));
+
+            const seasonEntries = show.seasons.map(
+              (s) => `${s.season_number}: ${s.episode_count} episodes (${s.air_date ?? "N/A"})`
+            );
+
+            embed.addField("Seasons", seasonEntries.join("\n"));
+
             await message.reply(embed);
 
             break;
           }
 
           case "Invalid": {
-            console.error(`Unable to get credits: ${maybeShow.errors}`);
+            console.error(
+              `Unable to get show: ${JSON.stringify(
+                maybeShow.errors,
+                null,
+                JSON_STRINGIFY_SPACING
+              )}`
+            );
 
             break;
           }

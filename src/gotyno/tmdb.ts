@@ -224,23 +224,23 @@ export function validateCrewEntry(value: unknown): svt.ValidationResult<CrewEntr
 
 export type Credits = {
   id: number | null | undefined;
-  cast: CastEntry[];
-  crew: CrewEntry[];
+  cast: CastEntry[] | null | undefined;
+  crew: CrewEntry[] | null | undefined;
 };
 
 export function isCredits(value: unknown): value is Credits {
   return svt.isInterface<Credits>(value, {
     id: svt.optional(svt.isNumber),
-    cast: svt.arrayOf(isCastEntry),
-    crew: svt.arrayOf(isCrewEntry),
+    cast: svt.optional(svt.arrayOf(isCastEntry)),
+    crew: svt.optional(svt.arrayOf(isCrewEntry)),
   });
 }
 
 export function validateCredits(value: unknown): svt.ValidationResult<Credits> {
   return svt.validate<Credits>(value, {
     id: svt.validateOptional(svt.validateNumber),
-    cast: svt.validateArray(validateCastEntry),
-    crew: svt.validateArray(validateCrewEntry),
+    cast: svt.validateOptional(svt.validateArray(validateCastEntry)),
+    crew: svt.validateOptional(svt.validateArray(validateCrewEntry)),
   });
 }
 
@@ -349,6 +349,37 @@ export function validateExternalIds(value: unknown): svt.ValidationResult<Extern
   });
 }
 
+export type Season = {
+  air_date: string | null | undefined;
+  episode_count: number;
+  season_number: number;
+  id: number;
+  name: string;
+  overview: string;
+};
+
+export function isSeason(value: unknown): value is Season {
+  return svt.isInterface<Season>(value, {
+    air_date: svt.optional(svt.isString),
+    episode_count: svt.isNumber,
+    season_number: svt.isNumber,
+    id: svt.isNumber,
+    name: svt.isString,
+    overview: svt.isString,
+  });
+}
+
+export function validateSeason(value: unknown): svt.ValidationResult<Season> {
+  return svt.validate<Season>(value, {
+    air_date: svt.validateOptional(svt.validateString),
+    episode_count: svt.validateNumber,
+    season_number: svt.validateNumber,
+    id: svt.validateNumber,
+    name: svt.validateString,
+    overview: svt.validateString,
+  });
+}
+
 export type Show = {
   poster_path: string | null | undefined;
   id: number;
@@ -359,6 +390,7 @@ export type Show = {
   overview: string;
   credits: Credits;
   last_episode_to_air: Episode | null | undefined;
+  seasons: Season[];
 };
 
 export function isShow(value: unknown): value is Show {
@@ -372,6 +404,7 @@ export function isShow(value: unknown): value is Show {
     overview: svt.isString,
     credits: isCredits,
     last_episode_to_air: svt.optional(isEpisode),
+    seasons: svt.arrayOf(isSeason),
   });
 }
 
@@ -386,6 +419,7 @@ export function validateShow(value: unknown): svt.ValidationResult<Show> {
     overview: svt.validateString,
     credits: validateCredits,
     last_episode_to_air: svt.validateOptional(validateEpisode),
+    seasons: svt.validateArray(validateSeason),
   });
 }
 
