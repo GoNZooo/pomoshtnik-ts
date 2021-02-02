@@ -65,8 +65,8 @@ struct CrewEntry {
 
 struct Credits {
     id: ?U32
-    cast: []CastEntry
-    crew: []CrewEntry
+    cast: ?[]CastEntry
+    crew: ?[]CrewEntry
 }
 
 struct MovieData {
@@ -100,6 +100,15 @@ struct ExternalIds {
     tvrage_id: ?U32
 }
 
+struct Season {
+    air_date: ?String
+    episode_count: U32
+    season_number: U32
+    id: U64
+    name: String
+    overview: String
+}
+
 struct Show {
     poster_path: ?String
     id: U32
@@ -110,6 +119,7 @@ struct Show {
     overview: String
     credits: Credits
     last_episode_to_air: ?Episode
+    seasons: []Season
 }
 
 struct Person {
