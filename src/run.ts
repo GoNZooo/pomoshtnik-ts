@@ -26,7 +26,6 @@ import {
   Show,
   ShowSearch,
 } from "./gotyno/commands";
-import {validatePush, WebhookEvent, WebhookEventTag} from "./gotyno/github";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
 import {CastEntry} from "./gotyno/tmdb";
 
@@ -60,25 +59,7 @@ const application = express();
 
 const discordClient = new Discord.Client();
 
-const discordWebhook = new Discord.WebhookClient(githubWebhookId, githubWebhookToken);
-
 application.use(express.json());
-
-application.post("/github-webhook", async (request, response) => {
-  const requestData = {
-    type: request.header("x-github-event") ?? "UnknownEvent",
-    data: request.body,
-  };
-  const decodedEvent = validatePush(requestData);
-
-  if (decodedEvent.type === "Valid") {
-    await handleGitHubWebhookEvent(decodedEvent.value, discordWebhook);
-  } else {
-    console.error("Unable to decode event:", decodedEvent.errors);
-  }
-
-  response.sendStatus(OK_STATUS);
-});
 
 application.listen(applicationPort);
 
@@ -635,50 +616,6 @@ export const handleISBNCommand = async (command: ISBN, message: Discord.Message)
   }
 };
 
-const handleGitHubWebhookEvent = async (
-  event: WebhookEvent,
-  hook: Discord.WebhookClient
-): Promise<void> => {
-  switch (event.type) {
-    case WebhookEventTag.push: {
-      const commitLines = event.data.commits
-        .reverse()
-        .slice(0, MAX_COMMITS_DESCRIPTION)
-        .map((c) => `[${c.id}](${c.url})\n**${truncateCommitMessage(c.message)}**`)
-        .join("\n---\n");
-      const nameIndex = 2;
-      const refName = event.data.ref.split("/")[nameIndex];
-      const description = `${event.data.sender.login} pushed to a repository: [${event.data.repository.name}/${refName}](${event.data.head_commit.url})`;
-      const content = [description, commitLines].join("\n");
-
-      await hook.send(content);
-
-      break;
-    }
-
-    default:
-      assertUnreachable(event.type);
-  }
-};
-
-const truncateCommitMessage = (message: string): string => {
-  return truncateString(message.split("\n")[0], MAX_COMMIT_MESSAGE_LENGTH);
-};
-
-const truncateString = (stringToTruncate: string, length: number): string => {
-  const removeLength = 3;
-
-  return stringToTruncate.length >= length
-    ? stringToTruncate.substring(0, length - removeLength) + "..."
-    : stringToTruncate;
-};
-
 const MAX_EMBED_CAST_ENTRIES = 20;
-
-const MAX_COMMITS_DESCRIPTION = 8;
-
-const MAX_COMMIT_MESSAGE_LENGTH = 60;
-
-const OK_STATUS = 200;
 
 const JSON_STRINGIFY_SPACING = 2;
