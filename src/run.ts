@@ -7,33 +7,46 @@ import * as isbndb from "./isbndb";
 import express from "express";
 import {
   Command,
+  CommandError,
+  CommandErrorTag,
   CommandTag,
-  EitherTag,
+  DiscordError,
   GitHubRepository,
   GitHubRepositorySearch,
   GitHubUser,
   GitHubUserSearch,
   ISBN,
-  Left,
   Movie,
   MovieSearch,
+  NoResults,
   Person,
   PersonSearch,
   RepositorySearchTypeTag,
-  Right,
   SearchCommand,
   SearchCommandTag,
+  SearchFailure,
+  SearchResult,
+  SearchResultTag,
+  SearchSuccess,
   Show,
   ShowSearch,
+  ValidationError,
 } from "./gotyno/commands";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
 import {CastEntry} from "./gotyno/tmdb";
+import {Db, MongoClient} from "mongodb";
+import {Reply, replyTo} from "./discord";
+import {
+  addSearchCommandResult,
+  addUserIfUnique,
+  connectToDatabase,
+  getSearches,
+  getUsers,
+} from "./database";
 
 const DEFAULT_APPLICATION_PORT = 3000;
 
 dotenv.config();
-
-const searches: SearchCommand[] = [];
 
 const discordApiKey = process.env.DISCORD_API_KEY ?? "NOVALUE";
 if (discordApiKey === "NOVALUE") throw new Error("No Discord API key specified.");
@@ -44,20 +57,21 @@ if (tmdbApiKey === "NOVALUE") throw new Error("No TMDB API key specified.");
 const isbndbApiKey = process.env.ISBNDB_KEY ?? "NOVALUE";
 if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.");
 
-const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? "NOVALUE";
-if (githubWebhookSecret === "NOVALUE") throw new Error("No GitHub webhook secret specified.");
-
-const githubWebhookId = process.env.GITHUB_WEBHOOK_ID ?? "NOVALUE";
-if (githubWebhookId === "NOVALUE") throw new Error("No GitHub webhook ID specified.");
-
-const githubWebhookToken = process.env.GITHUB_WEBHOOK_TOKEN ?? "NOVALUE";
-if (githubWebhookToken === "NOVALUE") throw new Error("No GitHub webhook token specified.");
+const mongoUri = process.env.MONGO_URI ?? "NOVALUE";
+if (mongoUri === "NOVALUE") throw new Error("No MongoDB URI specified.");
 
 const applicationPort = Number(process.env.PORT ?? DEFAULT_APPLICATION_PORT);
 
 const application = express();
 
 const discordClient = new Discord.Client();
+
+let mongoClient: MongoClient;
+let mongoDatabase: Db;
+(async () => {
+  mongoClient = await MongoClient.connect(mongoUri);
+  mongoDatabase = await connectToDatabase(mongoClient);
+})();
 
 application.use(express.json());
 
@@ -85,7 +99,6 @@ async function handleGitHubUserCommand(
 
   if (userResult.type === "Valid") {
     const user = userResult.value;
-    searches.push(GitHubUserSearch(Right(userResult.value)));
 
     const embed = new Discord.MessageEmbed({
       title: user.login,
@@ -107,9 +120,16 @@ async function handleGitHubUserCommand(
       embed.addField("Website", user.blog);
     }
 
-    await message.reply(embed);
+    await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubUserSearch);
+    await addSearchCommandResult(mongoDatabase, GitHubUserSearch(SearchSuccess(userResult.value)));
   } else {
-    searches.push(GitHubUserSearch(Left(command.data)));
+    const error = SearchFailure(
+      ValidationError({
+        commandText: message.content,
+        reason: JSON.stringify(userResult.errors, null, JSON_STRINGIFY_SPACING),
+      })
+    );
+    await addSearchCommandResult(mongoDatabase, GitHubUserSearch(error));
     console.error("Error fetching user:", userResult.errors);
   }
 }
@@ -124,7 +144,10 @@ async function handleGitHubRepositoryCommand(
 
       if (repositoryResult.type === "Valid") {
         const repository = repositoryResult.value;
-        searches.push(GitHubRepositorySearch(Right(repository)));
+        await addSearchCommandResult(
+          mongoDatabase,
+          GitHubRepositorySearch(SearchSuccess(repository))
+        );
 
         const embed = new Discord.MessageEmbed({
           title: repository.full_name,
@@ -136,15 +159,20 @@ async function handleGitHubRepositoryCommand(
         embed.addField("Creator", repository.owner.login);
         embed.addField("Language", repository.language);
 
-        await message.reply(embed);
+        await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubRepositorySearch);
 
         return;
       } else {
-        searches.push(GitHubRepositorySearch(Left(command.data.data)));
+        const error = SearchFailure(
+          ValidationError({
+            commandText: message.content,
+            reason: JSON.stringify(repositoryResult.errors, null, JSON_STRINGIFY_SPACING),
+          })
+        );
+        await addSearchCommandResult(mongoDatabase, GitHubRepositorySearch(error));
         console.error(
           "Error fetching repository:",
-          // tslint:disable-next-line:no-magic-numbers
-          JSON.stringify(repositoryResult.errors, null, 2)
+          JSON.stringify(repositoryResult.errors, null, JSON_STRINGIFY_SPACING)
         );
 
         return;
@@ -161,14 +189,13 @@ async function handleGitHubRepositoryCommand(
         const reply = lines.join("\n");
         const embed = new Discord.MessageEmbed({description: reply});
 
-        await message.reply(embed);
+        await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubRepositorySearch);
 
         return;
       } else {
         console.error(
           "Error fetching repository:",
-          // tslint:disable-next-line:no-magic-numbers
-          JSON.stringify(repositoryResults.errors, null, 2)
+          JSON.stringify(repositoryResults.errors, null, JSON_STRINGIFY_SPACING)
         );
 
         return;
@@ -181,6 +208,7 @@ async function handleGitHubRepositoryCommand(
 }
 
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
+  await addUserIfUnique(mongoDatabase, message.author, command);
   switch (command.type) {
     case CommandTag.Ping: {
       await message.reply("Pong!");
@@ -202,6 +230,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Searches: {
       const embed = new Discord.MessageEmbed();
+      const searches = await getSearches(mongoDatabase);
       if (searches.length === 0) {
         embed.description = "No searches executed yet.";
       } else {
@@ -209,52 +238,52 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
           .map((searchCommand) => {
             switch (searchCommand.type) {
               case SearchCommandTag.GitHubUserSearch: {
-                if (searchCommand.data.type === EitherTag.Right) {
+                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
                   const user = searchCommand.data.data;
 
                   return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
                 } else {
-                  return `GitHub user not found for search: ${searchCommand.data.data}`;
+                  return getSearchFailureText(searchCommand.data.data);
                 }
               }
 
               case SearchCommandTag.GitHubRepositorySearch: {
-                if (searchCommand.data.type === EitherTag.Right) {
+                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
                   const repository = searchCommand.data.data;
 
                   return `GitHub repository found: ${repository.url} (${repository.html_url})`;
                 } else {
-                  return `GitHub repository not found for search: ${searchCommand.data.data}`;
+                  return getSearchFailureText(searchCommand.data.data);
                 }
               }
 
               case SearchCommandTag.PersonSearch: {
-                if (searchCommand.data.type === EitherTag.Right) {
+                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
                   const person = searchCommand.data.data;
 
                   return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
                 } else {
-                  return `Person not found for search: ${searchCommand.data.data}`;
+                  return getSearchFailureText(searchCommand.data.data);
                 }
               }
 
               case SearchCommandTag.MovieSearch: {
-                if (searchCommand.data.type === EitherTag.Right) {
+                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
                   const movie = searchCommand.data.data;
 
                   return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
                 } else {
-                  return `Movie not found for search: ${searchCommand.data.data}`;
+                  return getSearchFailureText(searchCommand.data.data);
                 }
               }
 
               case SearchCommandTag.ShowSearch: {
-                if (searchCommand.data.type === EitherTag.Right) {
+                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
                   const show = searchCommand.data.data;
 
                   return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
                 } else {
-                  return `Show not found for search: ${searchCommand.data.data}`;
+                  return getSearchFailureText(searchCommand.data.data);
                 }
               }
 
@@ -308,10 +337,25 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
       return;
     }
 
+    case CommandTag.Users: {
+      await handleUsersCommand(command, message);
+
+      return;
+    }
+
     default:
       assertUnreachable(command);
   }
 };
+
+async function handleUsersCommand(_command: Command, message: Discord.Message): Promise<void> {
+  const users = await getUsers(mongoDatabase);
+  const joinedUsers = users
+    .map((u) => `${u.nickname} (${u.lastCommand.type}) @ ${u.lastSeen}`)
+    .join("\n");
+
+  await message.reply(joinedUsers);
+}
 
 discordClient.on("message", async (message) => {
   if (!message.author.bot) {
@@ -354,7 +398,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
         switch (maybePerson.type) {
           case "Valid": {
             const person = maybePerson.value;
-            searches.push(PersonSearch(Right(person)));
+            await addSearchCommandResult(mongoDatabase, PersonSearch(SearchSuccess(person)));
             const posterUrl =
               personCandidate.profile_path !== null
                 ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
@@ -394,7 +438,9 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
             assertUnreachable(maybePerson);
         }
       } else {
-        searches.push(PersonSearch(Left(command.data)));
+        const error = SearchFailure(NoResults(message.content));
+        await addSearchCommandResult(mongoDatabase, PersonSearch(error));
+
         await message.reply(`No results returned for '${command.data}'.`);
       }
 
@@ -433,7 +479,7 @@ export const handleMovieCommand = async (
         switch (maybeMovie.type) {
           case "Valid": {
             const movie = maybeMovie.value;
-            searches.push(MovieSearch(Right(movie)));
+            await addSearchCommandResult(mongoDatabase, MovieSearch(SearchSuccess(movie)));
 
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
@@ -462,7 +508,9 @@ export const handleMovieCommand = async (
             assertUnreachable(maybeMovie);
         }
       } else {
-        searches.push(MovieSearch(Left(command.data)));
+        const error = SearchFailure(NoResults(message.content));
+        await addSearchCommandResult(mongoDatabase, MovieSearch(error));
+
         await message.reply(`No results returned for '${command.data}'.`);
       }
 
@@ -498,7 +546,6 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
         switch (maybeShow.type) {
           case "Valid": {
             const show = maybeShow.value;
-            searches.push(ShowSearch(Right(show)));
 
             const lastEpisode = show.last_episode_to_air;
 
@@ -532,8 +579,9 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
             const castEntries = (show.credits.cast ?? [])
               .slice(0, MAX_EMBED_CAST_ENTRIES)
               .map((castEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+            const castContent = castEntries.length === 0 ? "N/A" : castEntries.join("\n");
 
-            embed.addField("Cast", castEntries.join("\n"));
+            embed.addField("Cast", castContent);
 
             const seasonEntries = show.seasons.map(
               (s) => `${s.season_number}: ${s.episode_count} episodes (${s.air_date ?? "N/A"})`
@@ -541,7 +589,8 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 
             embed.addField("Seasons", seasonEntries.join("\n"));
 
-            await message.reply(embed);
+            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, ShowSearch);
+            await addSearchCommandResult(mongoDatabase, ShowSearch(SearchSuccess(show)));
 
             break;
           }
@@ -564,7 +613,9 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 
         break;
       } else {
-        searches.push(ShowSearch(Left(command.data)));
+        const error = SearchFailure(NoResults(message.content));
+        await addSearchCommandResult(mongoDatabase, ShowSearch(error));
+
         await message.reply(`No results returned for '${command.data}'.`);
       }
       break;
@@ -580,6 +631,34 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
       assertUnreachable(maybeShows);
   }
 };
+
+async function replyOrAddDiscordApiFailure<T>(
+  database: Db,
+  message: Discord.Message,
+  reply: Reply,
+  constructor: (data: SearchResult<T>) => SearchCommand
+): Promise<void> {
+  const replyResult = await replyTo(message, reply);
+  switch (replyResult.type) {
+    case "ReplySuccess": {
+      break;
+    }
+
+    case "ReplyFailure": {
+      await addSearchCommandResult(
+        mongoDatabase,
+        constructor(
+          SearchFailure(DiscordError({...replyResult.error, commandText: message.content}))
+        )
+      );
+
+      break;
+    }
+
+    default:
+      assertUnreachable(replyResult);
+  }
+}
 
 export const handleISBNCommand = async (command: ISBN, message: Discord.Message): Promise<void> => {
   const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.data);
@@ -619,3 +698,22 @@ export const handleISBNCommand = async (command: ISBN, message: Discord.Message)
 const MAX_EMBED_CAST_ENTRIES = 20;
 
 const JSON_STRINGIFY_SPACING = 2;
+
+function getSearchFailureText(failure: CommandError): string {
+  switch (failure.type) {
+    case CommandErrorTag.NoResults: {
+      return `No results found for query '${failure.data}'`;
+    }
+
+    case CommandErrorTag.DiscordError: {
+      return `Discord error for query '${failure.data.commandText}'`;
+    }
+
+    case CommandErrorTag.ValidationError: {
+      return `Validation error for query '${failure.data.commandText}': `;
+    }
+
+    default:
+      return assertUnreachable(failure);
+  }
+}

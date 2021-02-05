@@ -4,75 +4,231 @@ import * as tmdb from "./tmdb";
 
 import * as github from "./github";
 
-export type Either<L, R> = Left<L> | Right<R>;
-
-export enum EitherTag {
-  Left = "Left",
-  Right = "Right",
-}
-
-export type Left<L> = {
-  type: EitherTag.Left;
-  data: L;
+export type DiscordErrorData = {
+  commandText: string;
+  name: string;
+  message: string;
+  method: string;
+  path: string;
+  code: number;
+  httpStatus: number;
 };
 
-export type Right<R> = {
-  type: EitherTag.Right;
-  data: R;
+export function isDiscordErrorData(value: unknown): value is DiscordErrorData {
+  return svt.isInterface<DiscordErrorData>(value, {
+    commandText: svt.isString,
+    name: svt.isString,
+    message: svt.isString,
+    method: svt.isString,
+    path: svt.isString,
+    code: svt.isNumber,
+    httpStatus: svt.isNumber,
+  });
+}
+
+export function validateDiscordErrorData(value: unknown): svt.ValidationResult<DiscordErrorData> {
+  return svt.validate<DiscordErrorData>(value, {
+    commandText: svt.validateString,
+    name: svt.validateString,
+    message: svt.validateString,
+    method: svt.validateString,
+    path: svt.validateString,
+    code: svt.validateNumber,
+    httpStatus: svt.validateNumber,
+  });
+}
+
+export type ValidationErrorData = {
+  commandText: string;
+  reason: string;
 };
 
-export function Left<L>(data: L): Left<L> {
-  return {type: EitherTag.Left, data};
+export function isValidationErrorData(value: unknown): value is ValidationErrorData {
+  return svt.isInterface<ValidationErrorData>(value, {
+    commandText: svt.isString,
+    reason: svt.isString,
+  });
 }
 
-export function Right<R>(data: R): Right<R> {
-  return {type: EitherTag.Right, data};
+export function validateValidationErrorData(
+  value: unknown
+): svt.ValidationResult<ValidationErrorData> {
+  return svt.validate<ValidationErrorData>(value, {
+    commandText: svt.validateString,
+    reason: svt.validateString,
+  });
 }
 
-export function isEither<L, R>(
-  isL: svt.TypePredicate<L>,
-  isR: svt.TypePredicate<R>
-): svt.TypePredicate<Either<L, R>> {
-  return function isEitherLR(value: unknown): value is Either<L, R> {
-    return [isLeft(isL), isRight(isR)].some((typePredicate) => typePredicate(value));
+export type CommandError = DiscordError | ValidationError | NoResults;
+
+export enum CommandErrorTag {
+  DiscordError = "DiscordError",
+  ValidationError = "ValidationError",
+  NoResults = "NoResults",
+}
+
+export type DiscordError = {
+  type: CommandErrorTag.DiscordError;
+  data: DiscordErrorData;
+};
+
+export type ValidationError = {
+  type: CommandErrorTag.ValidationError;
+  data: ValidationErrorData;
+};
+
+export type NoResults = {
+  type: CommandErrorTag.NoResults;
+  data: string;
+};
+
+export function DiscordError(data: DiscordErrorData): DiscordError {
+  return {type: CommandErrorTag.DiscordError, data};
+}
+
+export function ValidationError(data: ValidationErrorData): ValidationError {
+  return {type: CommandErrorTag.ValidationError, data};
+}
+
+export function NoResults(data: string): NoResults {
+  return {type: CommandErrorTag.NoResults, data};
+}
+
+export function isCommandError(value: unknown): value is CommandError {
+  return [isDiscordError, isValidationError, isNoResults].some((typePredicate) =>
+    typePredicate(value)
+  );
+}
+
+export function isDiscordError(value: unknown): value is DiscordError {
+  return svt.isInterface<DiscordError>(value, {
+    type: CommandErrorTag.DiscordError,
+    data: isDiscordErrorData,
+  });
+}
+
+export function isValidationError(value: unknown): value is ValidationError {
+  return svt.isInterface<ValidationError>(value, {
+    type: CommandErrorTag.ValidationError,
+    data: isValidationErrorData,
+  });
+}
+
+export function isNoResults(value: unknown): value is NoResults {
+  return svt.isInterface<NoResults>(value, {type: CommandErrorTag.NoResults, data: svt.isString});
+}
+
+export function validateCommandError(value: unknown): svt.ValidationResult<CommandError> {
+  return svt.validateWithTypeTag<CommandError>(
+    value,
+    {
+      [CommandErrorTag.DiscordError]: validateDiscordError,
+      [CommandErrorTag.ValidationError]: validateValidationError,
+      [CommandErrorTag.NoResults]: validateNoResults,
+    },
+    "type"
+  );
+}
+
+export function validateDiscordError(value: unknown): svt.ValidationResult<DiscordError> {
+  return svt.validate<DiscordError>(value, {
+    type: CommandErrorTag.DiscordError,
+    data: validateDiscordErrorData,
+  });
+}
+
+export function validateValidationError(value: unknown): svt.ValidationResult<ValidationError> {
+  return svt.validate<ValidationError>(value, {
+    type: CommandErrorTag.ValidationError,
+    data: validateValidationErrorData,
+  });
+}
+
+export function validateNoResults(value: unknown): svt.ValidationResult<NoResults> {
+  return svt.validate<NoResults>(value, {
+    type: CommandErrorTag.NoResults,
+    data: svt.validateString,
+  });
+}
+
+export type SearchResult<T> = SearchSuccess<T> | SearchFailure;
+
+export enum SearchResultTag {
+  SearchSuccess = "SearchSuccess",
+  SearchFailure = "SearchFailure",
+}
+
+export type SearchSuccess<T> = {
+  type: SearchResultTag.SearchSuccess;
+  data: T;
+};
+
+export type SearchFailure = {
+  type: SearchResultTag.SearchFailure;
+  data: CommandError;
+};
+
+export function SearchSuccess<T>(data: T): SearchSuccess<T> {
+  return {type: SearchResultTag.SearchSuccess, data};
+}
+
+export function SearchFailure(data: CommandError): SearchFailure {
+  return {type: SearchResultTag.SearchFailure, data};
+}
+
+export function isSearchResult<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchResult<T>> {
+  return function isSearchResultT(value: unknown): value is SearchResult<T> {
+    return [isSearchSuccess(isT), isSearchFailure].some((typePredicate) => typePredicate(value));
   };
 }
 
-export function isLeft<L>(isL: svt.TypePredicate<L>): svt.TypePredicate<Left<L>> {
-  return function isLeftL(value: unknown): value is Left<L> {
-    return svt.isInterface<Left<L>>(value, {type: EitherTag.Left, data: isL});
+export function isSearchSuccess<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchSuccess<T>> {
+  return function isSearchSuccessT(value: unknown): value is SearchSuccess<T> {
+    return svt.isInterface<SearchSuccess<T>>(value, {
+      type: SearchResultTag.SearchSuccess,
+      data: isT,
+    });
   };
 }
 
-export function isRight<R>(isR: svt.TypePredicate<R>): svt.TypePredicate<Right<R>> {
-  return function isRightR(value: unknown): value is Right<R> {
-    return svt.isInterface<Right<R>>(value, {type: EitherTag.Right, data: isR});
-  };
+export function isSearchFailure(value: unknown): value is SearchFailure {
+  return svt.isInterface<SearchFailure>(value, {
+    type: SearchResultTag.SearchFailure,
+    data: isCommandError,
+  });
 }
 
-export function validateEither<L, R>(
-  validateL: svt.Validator<L>,
-  validateR: svt.Validator<R>
-): svt.Validator<Either<L, R>> {
-  return function validateEitherLR(value: unknown): svt.ValidationResult<Either<L, R>> {
-    return svt.validateWithTypeTag<Either<L, R>>(
+export function validateSearchResult<T>(
+  validateT: svt.Validator<T>
+): svt.Validator<SearchResult<T>> {
+  return function validateSearchResultT(value: unknown): svt.ValidationResult<SearchResult<T>> {
+    return svt.validateWithTypeTag<SearchResult<T>>(
       value,
-      {[EitherTag.Left]: validateLeft(validateL), [EitherTag.Right]: validateRight(validateR)},
+      {
+        [SearchResultTag.SearchSuccess]: validateSearchSuccess(validateT),
+        [SearchResultTag.SearchFailure]: validateSearchFailure,
+      },
       "type"
     );
   };
 }
 
-export function validateLeft<L>(validateL: svt.Validator<L>): svt.Validator<Left<L>> {
-  return function validateLeftL(value: unknown): svt.ValidationResult<Left<L>> {
-    return svt.validate<Left<L>>(value, {type: EitherTag.Left, data: validateL});
+export function validateSearchSuccess<T>(
+  validateT: svt.Validator<T>
+): svt.Validator<SearchSuccess<T>> {
+  return function validateSearchSuccessT(value: unknown): svt.ValidationResult<SearchSuccess<T>> {
+    return svt.validate<SearchSuccess<T>>(value, {
+      type: SearchResultTag.SearchSuccess,
+      data: validateT,
+    });
   };
 }
 
-export function validateRight<R>(validateR: svt.Validator<R>): svt.Validator<Right<R>> {
-  return function validateRightR(value: unknown): svt.ValidationResult<Right<R>> {
-    return svt.validate<Right<R>>(value, {type: EitherTag.Right, data: validateR});
-  };
+export function validateSearchFailure(value: unknown): svt.ValidationResult<SearchFailure> {
+  return svt.validate<SearchFailure>(value, {
+    type: SearchResultTag.SearchFailure,
+    data: validateCommandError,
+  });
 }
 
 export type SearchCommand =
@@ -92,47 +248,47 @@ export enum SearchCommandTag {
 
 export type PersonSearch = {
   type: SearchCommandTag.PersonSearch;
-  data: Either<string, tmdb.Person>;
+  data: SearchResult<tmdb.Person>;
 };
 
 export type MovieSearch = {
   type: SearchCommandTag.MovieSearch;
-  data: Either<string, tmdb.MovieData>;
+  data: SearchResult<tmdb.MovieData>;
 };
 
 export type ShowSearch = {
   type: SearchCommandTag.ShowSearch;
-  data: Either<string, tmdb.Show>;
+  data: SearchResult<tmdb.Show>;
 };
 
 export type GitHubUserSearch = {
   type: SearchCommandTag.GitHubUserSearch;
-  data: Either<string, github.UserData>;
+  data: SearchResult<github.UserData>;
 };
 
 export type GitHubRepositorySearch = {
   type: SearchCommandTag.GitHubRepositorySearch;
-  data: Either<string, github.Repository>;
+  data: SearchResult<github.Repository>;
 };
 
-export function PersonSearch(data: Either<string, tmdb.Person>): PersonSearch {
+export function PersonSearch(data: SearchResult<tmdb.Person>): PersonSearch {
   return {type: SearchCommandTag.PersonSearch, data};
 }
 
-export function MovieSearch(data: Either<string, tmdb.MovieData>): MovieSearch {
+export function MovieSearch(data: SearchResult<tmdb.MovieData>): MovieSearch {
   return {type: SearchCommandTag.MovieSearch, data};
 }
 
-export function ShowSearch(data: Either<string, tmdb.Show>): ShowSearch {
+export function ShowSearch(data: SearchResult<tmdb.Show>): ShowSearch {
   return {type: SearchCommandTag.ShowSearch, data};
 }
 
-export function GitHubUserSearch(data: Either<string, github.UserData>): GitHubUserSearch {
+export function GitHubUserSearch(data: SearchResult<github.UserData>): GitHubUserSearch {
   return {type: SearchCommandTag.GitHubUserSearch, data};
 }
 
 export function GitHubRepositorySearch(
-  data: Either<string, github.Repository>
+  data: SearchResult<github.Repository>
 ): GitHubRepositorySearch {
   return {type: SearchCommandTag.GitHubRepositorySearch, data};
 }
@@ -150,35 +306,35 @@ export function isSearchCommand(value: unknown): value is SearchCommand {
 export function isPersonSearch(value: unknown): value is PersonSearch {
   return svt.isInterface<PersonSearch>(value, {
     type: SearchCommandTag.PersonSearch,
-    data: isEither(svt.isString, tmdb.isPerson),
+    data: isSearchResult(tmdb.isPerson),
   });
 }
 
 export function isMovieSearch(value: unknown): value is MovieSearch {
   return svt.isInterface<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
-    data: isEither(svt.isString, tmdb.isMovieData),
+    data: isSearchResult(tmdb.isMovieData),
   });
 }
 
 export function isShowSearch(value: unknown): value is ShowSearch {
   return svt.isInterface<ShowSearch>(value, {
     type: SearchCommandTag.ShowSearch,
-    data: isEither(svt.isString, tmdb.isShow),
+    data: isSearchResult(tmdb.isShow),
   });
 }
 
 export function isGitHubUserSearch(value: unknown): value is GitHubUserSearch {
   return svt.isInterface<GitHubUserSearch>(value, {
     type: SearchCommandTag.GitHubUserSearch,
-    data: isEither(svt.isString, github.isUserData),
+    data: isSearchResult(github.isUserData),
   });
 }
 
 export function isGitHubRepositorySearch(value: unknown): value is GitHubRepositorySearch {
   return svt.isInterface<GitHubRepositorySearch>(value, {
     type: SearchCommandTag.GitHubRepositorySearch,
-    data: isEither(svt.isString, github.isRepository),
+    data: isSearchResult(github.isRepository),
   });
 }
 
@@ -199,28 +355,28 @@ export function validateSearchCommand(value: unknown): svt.ValidationResult<Sear
 export function validatePersonSearch(value: unknown): svt.ValidationResult<PersonSearch> {
   return svt.validate<PersonSearch>(value, {
     type: SearchCommandTag.PersonSearch,
-    data: validateEither(svt.validateString, tmdb.validatePerson),
+    data: validateSearchResult(tmdb.validatePerson),
   });
 }
 
 export function validateMovieSearch(value: unknown): svt.ValidationResult<MovieSearch> {
   return svt.validate<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
-    data: validateEither(svt.validateString, tmdb.validateMovieData),
+    data: validateSearchResult(tmdb.validateMovieData),
   });
 }
 
 export function validateShowSearch(value: unknown): svt.ValidationResult<ShowSearch> {
   return svt.validate<ShowSearch>(value, {
     type: SearchCommandTag.ShowSearch,
-    data: validateEither(svt.validateString, tmdb.validateShow),
+    data: validateSearchResult(tmdb.validateShow),
   });
 }
 
 export function validateGitHubUserSearch(value: unknown): svt.ValidationResult<GitHubUserSearch> {
   return svt.validate<GitHubUserSearch>(value, {
     type: SearchCommandTag.GitHubUserSearch,
-    data: validateEither(svt.validateString, github.validateUserData),
+    data: validateSearchResult(github.validateUserData),
   });
 }
 
@@ -229,7 +385,7 @@ export function validateGitHubRepositorySearch(
 ): svt.ValidationResult<GitHubRepositorySearch> {
   return svt.validate<GitHubRepositorySearch>(value, {
     type: SearchCommandTag.GitHubRepositorySearch,
-    data: validateEither(svt.validateString, github.validateRepository),
+    data: validateSearchResult(github.validateRepository),
   });
 }
 
@@ -309,6 +465,7 @@ export type Command =
   | Ping
   | WhoAreYou
   | Searches
+  | Users
   | Movie
   | Person
   | Show
@@ -320,6 +477,7 @@ export enum CommandTag {
   Ping = "Ping",
   WhoAreYou = "WhoAreYou",
   Searches = "Searches",
+  Users = "Users",
   Movie = "Movie",
   Person = "Person",
   Show = "Show",
@@ -338,6 +496,10 @@ export type WhoAreYou = {
 
 export type Searches = {
   type: CommandTag.Searches;
+};
+
+export type Users = {
+  type: CommandTag.Users;
 };
 
 export type Movie = {
@@ -382,6 +544,10 @@ export function Searches(): Searches {
   return {type: CommandTag.Searches};
 }
 
+export function Users(): Users {
+  return {type: CommandTag.Users};
+}
+
 export function Movie(data: string): Movie {
   return {type: CommandTag.Movie, data};
 }
@@ -411,6 +577,7 @@ export function isCommand(value: unknown): value is Command {
     isPing,
     isWhoAreYou,
     isSearches,
+    isUsers,
     isMovie,
     isPerson,
     isShow,
@@ -430,6 +597,10 @@ export function isWhoAreYou(value: unknown): value is WhoAreYou {
 
 export function isSearches(value: unknown): value is Searches {
   return svt.isInterface<Searches>(value, {type: CommandTag.Searches});
+}
+
+export function isUsers(value: unknown): value is Users {
+  return svt.isInterface<Users>(value, {type: CommandTag.Users});
 }
 
 export function isMovie(value: unknown): value is Movie {
@@ -466,6 +637,7 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.Ping]: validatePing,
       [CommandTag.WhoAreYou]: validateWhoAreYou,
       [CommandTag.Searches]: validateSearches,
+      [CommandTag.Users]: validateUsers,
       [CommandTag.Movie]: validateMovie,
       [CommandTag.Person]: validatePerson,
       [CommandTag.Show]: validateShow,
@@ -487,6 +659,10 @@ export function validateWhoAreYou(value: unknown): svt.ValidationResult<WhoAreYo
 
 export function validateSearches(value: unknown): svt.ValidationResult<Searches> {
   return svt.validate<Searches>(value, {type: CommandTag.Searches});
+}
+
+export function validateUsers(value: unknown): svt.ValidationResult<Users> {
+  return svt.validate<Users>(value, {type: CommandTag.Users});
 }
 
 export function validateMovie(value: unknown): svt.ValidationResult<Movie> {
@@ -513,5 +689,27 @@ export function validateGitHubRepository(value: unknown): svt.ValidationResult<G
   return svt.validate<GitHubRepository>(value, {
     type: CommandTag.GitHubRepository,
     data: validateRepositorySearchType,
+  });
+}
+
+export type BotUser = {
+  nickname: string;
+  lastCommand: Command;
+  lastSeen: string;
+};
+
+export function isBotUser(value: unknown): value is BotUser {
+  return svt.isInterface<BotUser>(value, {
+    nickname: svt.isString,
+    lastCommand: isCommand,
+    lastSeen: svt.isString,
+  });
+}
+
+export function validateBotUser(value: unknown): svt.ValidationResult<BotUser> {
+  return svt.validate<BotUser>(value, {
+    nickname: svt.validateString,
+    lastCommand: validateCommand,
+    lastSeen: svt.validateString,
   });
 }

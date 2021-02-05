@@ -20,6 +20,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!isbn": CommandTag.ISBN,
     "!github-user": CommandTag.GitHubUser,
     "!github-repo": CommandTag.GitHubRepository,
+    "!users": CommandTag.Users,
   };
 
   const githubRepositorySearchTypes: {[key: string]: RepositorySearchTypeTag} = {
