@@ -1,13 +1,9 @@
 import {Db, MongoClient} from "mongodb";
 import * as Discord from "discord.js";
-import {BotUser, Command, CommandError, SearchCommand} from "./gotyno/commands";
+import {BotUser, Command, SearchCommand} from "./gotyno/commands";
 
 export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");
-}
-
-export async function addCommandError(database: Db, error: CommandError): Promise<void> {
-  await database.collection("commandErrors").insertOne(error);
 }
 
 export async function getSearches(database: Db): Promise<SearchCommand[]> {
@@ -37,11 +33,17 @@ export async function addUserIfUnique(
   user: Discord.User,
   lastCommand: Command
 ): Promise<void> {
-  const lastSeen = Date.now().toString();
+  const lastSeen = new Date().toISOString();
   const nickname = user.username;
+  const botUsers = await database.collection("users");
   const botUser = {lastCommand, lastSeen, nickname};
 
-  await database.collection("users").insertOne(botUser);
+  const foundUser: unknown = await botUsers.findOne({nickname});
+  if (foundUser === null) {
+    await botUsers.insertOne(botUser);
+  } else {
+    await botUsers.replaceOne({nickname}, botUser);
+  }
 }
 
 const DESCENDING_ORDER = -1;
