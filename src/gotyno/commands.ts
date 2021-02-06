@@ -469,7 +469,6 @@ export type Command =
   | Movie
   | Person
   | Show
-  | ISBN
   | GitHubUser
   | GitHubRepository;
 
@@ -481,7 +480,6 @@ export enum CommandTag {
   Movie = "Movie",
   Person = "Person",
   Show = "Show",
-  ISBN = "ISBN",
   GitHubUser = "GitHubUser",
   GitHubRepository = "GitHubRepository",
 }
@@ -514,11 +512,6 @@ export type Person = {
 
 export type Show = {
   type: CommandTag.Show;
-  data: string;
-};
-
-export type ISBN = {
-  type: CommandTag.ISBN;
   data: string;
 };
 
@@ -560,10 +553,6 @@ export function Show(data: string): Show {
   return {type: CommandTag.Show, data};
 }
 
-export function ISBN(data: string): ISBN {
-  return {type: CommandTag.ISBN, data};
-}
-
 export function GitHubUser(data: string): GitHubUser {
   return {type: CommandTag.GitHubUser, data};
 }
@@ -581,7 +570,6 @@ export function isCommand(value: unknown): value is Command {
     isMovie,
     isPerson,
     isShow,
-    isISBN,
     isGitHubUser,
     isGitHubRepository,
   ].some((typePredicate) => typePredicate(value));
@@ -615,10 +603,6 @@ export function isShow(value: unknown): value is Show {
   return svt.isInterface<Show>(value, {type: CommandTag.Show, data: svt.isString});
 }
 
-export function isISBN(value: unknown): value is ISBN {
-  return svt.isInterface<ISBN>(value, {type: CommandTag.ISBN, data: svt.isString});
-}
-
 export function isGitHubUser(value: unknown): value is GitHubUser {
   return svt.isInterface<GitHubUser>(value, {type: CommandTag.GitHubUser, data: svt.isString});
 }
@@ -641,7 +625,6 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.Movie]: validateMovie,
       [CommandTag.Person]: validatePerson,
       [CommandTag.Show]: validateShow,
-      [CommandTag.ISBN]: validateISBN,
       [CommandTag.GitHubUser]: validateGitHubUser,
       [CommandTag.GitHubRepository]: validateGitHubRepository,
     },
@@ -675,10 +658,6 @@ export function validatePerson(value: unknown): svt.ValidationResult<Person> {
 
 export function validateShow(value: unknown): svt.ValidationResult<Show> {
   return svt.validate<Show>(value, {type: CommandTag.Show, data: svt.validateString});
-}
-
-export function validateISBN(value: unknown): svt.ValidationResult<ISBN> {
-  return svt.validate<ISBN>(value, {type: CommandTag.ISBN, data: svt.validateString});
 }
 
 export function validateGitHubUser(value: unknown): svt.ValidationResult<GitHubUser> {

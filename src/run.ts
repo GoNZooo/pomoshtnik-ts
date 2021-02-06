@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as commands from "./commands";
 import {assertUnreachable} from "./utilities";
-import * as isbndb from "./isbndb";
 import express from "express";
 import {
   Command,
@@ -15,7 +14,6 @@ import {
   GitHubRepositorySearch,
   GitHubUser,
   GitHubUserSearch,
-  ISBN,
   Movie,
   MovieSearch,
   NoResults,
@@ -53,9 +51,6 @@ if (discordApiKey === "NOVALUE") throw new Error("No Discord API key specified."
 
 const tmdbApiKey = process.env.TMDB_API_KEY ?? "NOVALUE";
 if (tmdbApiKey === "NOVALUE") throw new Error("No TMDB API key specified.");
-
-const isbndbApiKey = process.env.ISBNDB_KEY ?? "NOVALUE";
-if (isbndbApiKey === "NOVALUE") throw new Error("No ISBDNDB API key specified.");
 
 const mongoUri = process.env.MONGO_URI ?? "NOVALUE";
 if (mongoUri === "NOVALUE") throw new Error("No MongoDB URI specified.");
@@ -252,12 +247,6 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
       return;
     }
 
-    case CommandTag.ISBN: {
-      await handleISBNCommand(command, message);
-
-      return;
-    }
-
     case CommandTag.GitHubUser: {
       await handleGitHubUserCommand(command, message);
 
@@ -429,7 +418,7 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
               embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
             });
 
-            await message.reply(embed);
+            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, PersonSearch);
 
             break;
           }
@@ -497,7 +486,7 @@ export const handleMovieCommand = async (
 
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));
-            await message.reply(embed);
+            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, MovieSearch);
 
             break;
           }
@@ -663,41 +652,6 @@ async function replyOrAddDiscordApiFailure<T>(
       assertUnreachable(replyResult);
   }
 }
-
-export const handleISBNCommand = async (command: ISBN, message: Discord.Message): Promise<void> => {
-  const maybeBook = await isbndb.getBookByISBN(isbndbApiKey, command.data);
-
-  switch (maybeBook.type) {
-    case "Valid": {
-      const book = maybeBook.value;
-
-      const embed = new Discord.MessageEmbed({
-        title: book.title,
-        image: {url: book.image ?? ""},
-      });
-
-      embed.addField("Overview", book.overview ?? "N/A");
-      embed.addField("Published", book.publish_date);
-      embed.addField("Authors", book.authors.join(", "));
-      embed.addField("Pages", book.pages);
-      embed.addField("Publisher", book.publisher);
-      embed.addField("ISBN", `${book.isbn} & ${book.isbn13}`);
-
-      await message.reply(embed);
-
-      break;
-    }
-
-    case "Invalid": {
-      console.error("error:", maybeBook.errors);
-
-      break;
-    }
-
-    default:
-      assertUnreachable(maybeBook);
-  }
-};
 
 const MAX_EMBED_CAST_ENTRIES = 20;
 

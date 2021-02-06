@@ -48,7 +48,6 @@ union Command {
     Movie: String
     Person: String
     Show: String
-    ISBN: String
     GitHubUser: String
     GitHubRepository: RepositorySearchType
 }
