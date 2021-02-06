@@ -229,74 +229,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
     }
 
     case CommandTag.Searches: {
-      const embed = new Discord.MessageEmbed();
-      const searches = await getSearches(mongoDatabase);
-      if (searches.length === 0) {
-        embed.description = "No searches executed yet.";
-      } else {
-        const joinedSearches = searches
-          .map((searchCommand) => {
-            switch (searchCommand.type) {
-              case SearchCommandTag.GitHubUserSearch: {
-                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-                  const user = searchCommand.data.data;
-
-                  return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
-                } else {
-                  return getSearchFailureText(searchCommand.data.data);
-                }
-              }
-
-              case SearchCommandTag.GitHubRepositorySearch: {
-                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-                  const repository = searchCommand.data.data;
-
-                  return `GitHub repository found: ${repository.url} (${repository.html_url})`;
-                } else {
-                  return getSearchFailureText(searchCommand.data.data);
-                }
-              }
-
-              case SearchCommandTag.PersonSearch: {
-                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-                  const person = searchCommand.data.data;
-
-                  return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
-                } else {
-                  return getSearchFailureText(searchCommand.data.data);
-                }
-              }
-
-              case SearchCommandTag.MovieSearch: {
-                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-                  const movie = searchCommand.data.data;
-
-                  return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
-                } else {
-                  return getSearchFailureText(searchCommand.data.data);
-                }
-              }
-
-              case SearchCommandTag.ShowSearch: {
-                if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-                  const show = searchCommand.data.data;
-
-                  return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
-                } else {
-                  return getSearchFailureText(searchCommand.data.data);
-                }
-              }
-
-              default:
-                assertUnreachable(searchCommand);
-            }
-          })
-          .join("\n\n");
-
-        embed.addField("Searches", joinedSearches);
-      }
-
-      await message.reply("Searches", embed);
+      await handleSearchesCommand(command, message);
 
       return;
     }
@@ -355,6 +288,77 @@ async function handleUsersCommand(_command: Command, message: Discord.Message): 
     .join("\n");
 
   await message.reply(joinedUsers);
+}
+
+async function handleSearchesCommand(command: Command, message: Discord.Message): Promise<void> {
+  const embed = new Discord.MessageEmbed();
+  const searches = await getSearches(mongoDatabase);
+  if (searches.length === 0) {
+    embed.description = "No searches executed yet.";
+  } else {
+    const joinedSearches = searches
+      .map((searchCommand) => {
+        switch (searchCommand.type) {
+          case SearchCommandTag.GitHubUserSearch: {
+            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
+              const user = searchCommand.data.data;
+
+              return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.data);
+            }
+          }
+
+          case SearchCommandTag.GitHubRepositorySearch: {
+            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
+              const repository = searchCommand.data.data;
+
+              return `GitHub repository found: ${repository.url} (${repository.html_url})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.data);
+            }
+          }
+
+          case SearchCommandTag.PersonSearch: {
+            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
+              const person = searchCommand.data.data;
+
+              return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.data);
+            }
+          }
+
+          case SearchCommandTag.MovieSearch: {
+            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
+              const movie = searchCommand.data.data;
+
+              return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.data);
+            }
+          }
+
+          case SearchCommandTag.ShowSearch: {
+            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
+              const show = searchCommand.data.data;
+
+              return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.data);
+            }
+          }
+
+          default:
+            assertUnreachable(searchCommand);
+        }
+      })
+      .join("\n\n");
+
+    embed.addField("Searches", joinedSearches);
+  }
+
+  await message.reply("Searches", embed);
 }
 
 discordClient.on("message", async (message) => {
