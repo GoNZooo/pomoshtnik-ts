@@ -5,7 +5,7 @@ import {
   validateRepository,
   validateRepositorySearchData,
   validateUserData,
-} from "./gotyno/github";
+} from "../pomoshtnik-shared/gotyno/github";
 import * as svt from "simple-validation-tools";
 import fetch from "isomorphic-fetch";
 

@@ -2,7 +2,7 @@ import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as commands from "./commands";
-import {assertUnreachable} from "./utilities";
+import {assertUnreachable} from "../pomoshtnik-shared/utilities";
 import express from "express";
 import {
   Command,
@@ -29,9 +29,9 @@ import {
   Show,
   ShowSearch,
   ValidationError,
-} from "./gotyno/commands";
+} from "../pomoshtnik-shared/gotyno/commands";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
-import {CastEntry} from "./gotyno/tmdb";
+import {CastEntry} from "../pomoshtnik-shared/gotyno/tmdb";
 import {Db, MongoClient} from "mongodb";
 import {Reply, replyTo} from "./discord";
 import {
@@ -42,7 +42,7 @@ import {
   getUsers,
 } from "./database";
 
-const DEFAULT_APPLICATION_PORT = 3000;
+const DEFAULT_APPLICATION_PORT = 2999;
 
 dotenv.config();
 

@@ -19,7 +19,7 @@ import {
   validatePersonSearchResult,
   validateMovieSearchResult,
   validateMovieData,
-} from "./gotyno/tmdb";
+} from "../pomoshtnik-shared/gotyno/tmdb";
 
 const apiUrl = "https://api.themoviedb.org/3/";
 

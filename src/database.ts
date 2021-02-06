@@ -1,6 +1,6 @@
 import {Db, MongoClient} from "mongodb";
 import * as Discord from "discord.js";
-import {BotUser, Command, SearchCommand} from "./gotyno/commands";
+import {BotUser, Command, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
 
 export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");

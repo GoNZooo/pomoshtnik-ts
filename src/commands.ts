@@ -6,7 +6,7 @@ import {
   RepositoryByTopics,
   RepositorySearchTypeTag,
   validateCommand,
-} from "./gotyno/commands";
+} from "../pomoshtnik-shared/gotyno/commands";
 import {ValidationResult} from "simple-validation-tools";
 
 export function commandFromStrings(strings: string[]): ValidationResult<Command> {

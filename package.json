@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon ./src/run.ts",
-    "build:types": "gotyno -ts = src/gotyno/tmdb.gotyno src/gotyno/github.gotyno src/gotyno/commands.gotyno",
-    "postbuild:types": "yarn prettier --write src/gotyno/*.ts"
+    "build:types": "gotyno -ts = pomoshtnik-shared/gotyno/tmdb.gotyno pomoshtnik-shared/gotyno/github.gotyno pomoshtnik-shared/gotyno/commands.gotyno",
+    "postbuild:types": "yarn prettier --write pomoshtnik-shared/gotyno/*.ts"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
@@ -25,7 +25,7 @@
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "gotyno": "0.3.7",
+    "gotyno": "0.3.8",
     "isomorphic-fetch": "^2.2.1",
     "mongodb": "^3.6.4"
   }
