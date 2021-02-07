@@ -96,7 +96,7 @@ function Searches({searches, dispatch, filter}: Props) {
     const [icon, text] = getIconAndTextFromSearchCommand(s);
     const removeListItemIcon = hasMongoId<SearchCommand>(s) ? (
       <ListItemIcon onClick={handleDeleteSearch(s)}>
-        <Delete />
+        <Delete color="error" />
       </ListItemIcon>
     ) : null;
 
@@ -121,7 +121,9 @@ function Searches({searches, dispatch, filter}: Props) {
       <input type="text" value={searchFilterAsText(filter)} onChange={handleSearchFilterChange} />
       <List>
         {searchResults.map((r, index) => (
-          <ListItem key={index}>{r}</ListItem>
+          <ListItem dense button key={index}>
+            {r}
+          </ListItem>
         ))}
       </List>
     </>
