@@ -1,17 +1,19 @@
 import * as React from "react";
 import {SearchCommand, SearchCommandTag, SearchResultTag} from "../../shared/gotyno/commands";
-import {assertUnreachable} from "../../shared/utilities";
+import {assertUnreachable, getSearchFailureText} from "../../shared/utilities";
 import {GitHub as GitHubIcon, Movie, Person, Tv} from "@material-ui/icons";
 import {
+  ApplicationEvent,
   EventFromClient,
   ExecuteApiRequest,
   GetSearches,
   GetSearchesFilter,
   GetSearchesFilterTag,
+  NoSearchesFilter,
   SearchesByResultLike,
-  ApplicationEvent,
   SetGetSearchesFilter,
 } from "../../shared/gotyno/api";
+import {List, ListItem, ListItemIcon, ListItemText} from "@material-ui/core";
 
 export type Props = {
   searches: SearchCommand[];
@@ -24,123 +26,91 @@ function Searches({searches, dispatch, filter}: Props) {
     dispatch(EventFromClient(ExecuteApiRequest(GetSearches(filter))));
   }, [dispatch, filter]);
 
-  const searchResults = searches.map((s) => {
-    const color = s.data.type === SearchResultTag.SearchSuccess ? "primary" : "error";
+  function getIconAndTextFromSearchCommand(command: SearchCommand): [JSX.Element, string] {
+    const color = command.data.type === SearchResultTag.SearchSuccess ? "primary" : "error";
 
-    switch (s.type) {
+    switch (command.type) {
       case SearchCommandTag.GitHubUserSearch: {
         const content =
-          s.data.type === SearchResultTag.SearchSuccess ? (
-            <>{s.data.data.login}</>
-          ) : (
-            <span>fail lol</span>
-          );
+          command.data.type === SearchResultTag.SearchSuccess
+            ? command.data.data.login
+            : getSearchFailureText(command.data.data);
         const icon = <GitHubIcon color={color} />;
 
-        return (
-          <span>
-            <>
-              {icon}
-              {content}
-            </>
-          </span>
-        );
+        return [icon, content];
       }
 
       case SearchCommandTag.GitHubRepositorySearch: {
         const content =
-          s.data.type === SearchResultTag.SearchSuccess ? (
-            <>{s.data.data.full_name}</>
-          ) : (
-            <span>fail lol</span>
-          );
+          command.data.type === SearchResultTag.SearchSuccess
+            ? command.data.data.full_name
+            : getSearchFailureText(command.data.data);
         const icon = <GitHubIcon color={color} />;
 
-        return (
-          <span>
-            <>
-              {icon}
-              {content}
-            </>
-          </span>
-        );
+        return [icon, content];
       }
 
       case SearchCommandTag.MovieSearch: {
         const content =
-          s.data.type === SearchResultTag.SearchSuccess ? (
-            <>{s.data.data.title}</>
-          ) : (
-            <span>fail lol</span>
-          );
+          command.data.type === SearchResultTag.SearchSuccess
+            ? command.data.data.title ?? "Title not available"
+            : getSearchFailureText(command.data.data);
         const icon = <Movie color={color} />;
 
-        return (
-          <span>
-            <>
-              {icon}
-              {content}
-            </>
-          </span>
-        );
+        return [icon, content];
       }
 
       case SearchCommandTag.ShowSearch: {
         const content =
-          s.data.type === SearchResultTag.SearchSuccess ? (
-            <>{s.data.data.name}</>
-          ) : (
-            <span>fail lol</span>
-          );
+          command.data.type === SearchResultTag.SearchSuccess
+            ? command.data.data.name
+            : getSearchFailureText(command.data.data);
         const icon = <Tv color={color} />;
 
-        return (
-          <span>
-            <>
-              {icon}
-              {content}
-            </>
-          </span>
-        );
+        return [icon, content];
       }
 
       case SearchCommandTag.PersonSearch: {
         const content =
-          s.data.type === SearchResultTag.SearchSuccess ? (
-            <>{s.data.data.name}</>
-          ) : (
-            <span>fail lol</span>
-          );
+          command.data.type === SearchResultTag.SearchSuccess
+            ? command.data.data.name
+            : getSearchFailureText(command.data.data);
         const icon = <Person color={color} />;
 
-        return (
-          <span>
-            <>
-              {icon}
-              {content}
-            </>
-          </span>
-        );
+        return [icon, content];
       }
 
       default:
-        return assertUnreachable(s);
+        return assertUnreachable(command);
     }
+  }
+
+  const searchResults = searches.map((s) => {
+    const [icon, text] = getIconAndTextFromSearchCommand(s);
+
+    return (
+      <>
+        <ListItemIcon>{icon}</ListItemIcon>
+        <ListItemText>{text}</ListItemText>
+      </>
+    );
   });
 
   const handleSearchFilterChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    dispatch(EventFromClient(SetGetSearchesFilter(SearchesByResultLike(e.target.value))));
+    const filterToSet =
+      e.target.value === "" ? NoSearchesFilter() : SearchesByResultLike(e.target.value);
+    dispatch(EventFromClient(SetGetSearchesFilter(filterToSet)));
   };
 
   return (
     <>
       <h1>Searches</h1>
       <input type="text" value={searchFilterAsText(filter)} onChange={handleSearchFilterChange} />
-      <ul>
+      <List>
         {searchResults.map((r, index) => (
-          <li key={index}>{r}</li>
+          <ListItem key={index}>{r}</ListItem>
         ))}
-      </ul>
+      </List>
     </>
   );
 }

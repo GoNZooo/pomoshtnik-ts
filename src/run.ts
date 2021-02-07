@@ -2,13 +2,11 @@ import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as commands from "./commands";
-import {assertUnreachable} from "../pomoshtnik-shared/utilities";
+import {assertUnreachable, getSearchFailureText} from "../pomoshtnik-shared/utilities";
 import express from "express";
 import cors from "cors";
 import {
   Command,
-  CommandError,
-  CommandErrorTag,
   CommandTag,
   DiscordError,
   GitHubRepository,
@@ -328,7 +326,7 @@ async function handleUsersCommand(_command: Command, message: Discord.Message): 
 
 async function handleSearchesCommand(command: Command, message: Discord.Message): Promise<void> {
   const embed = new Discord.MessageEmbed();
-  const searches = await getSearches(mongoDatabase);
+  const searches = await getSearches(mongoDatabase, 10);
   if (searches.length === 0) {
     embed.description = "No searches executed yet.";
   } else {
@@ -703,22 +701,3 @@ async function replyOrAddDiscordApiFailure<T>(
 const MAX_EMBED_CAST_ENTRIES = 20;
 
 const JSON_STRINGIFY_SPACING = 2;
-
-function getSearchFailureText(failure: CommandError): string {
-  switch (failure.type) {
-    case CommandErrorTag.NoResults: {
-      return `No results found for query '${failure.data}'`;
-    }
-
-    case CommandErrorTag.DiscordError: {
-      return `Discord error for query '${failure.data.commandText}'`;
-    }
-
-    case CommandErrorTag.ValidationError: {
-      return `Validation error for query '${failure.data.commandText}': `;
-    }
-
-    default:
-      return assertUnreachable(failure);
-  }
-}

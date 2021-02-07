@@ -12,13 +12,10 @@ export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");
 }
 
-export async function getSearches(database: Db): Promise<SearchCommand[]> {
-  return await database
-    .collection("searches")
-    .find({})
-    .sort("_id", DESCENDING_ORDER)
-    .limit(10)
-    .toArray();
+export async function getSearches(database: Db, limit?: number): Promise<SearchCommand[]> {
+  const results = await database.collection("searches").find({}).sort("_id", DESCENDING_ORDER);
+
+  return limit !== undefined ? results.limit(limit).toArray() : results.toArray();
 }
 
 export async function getSearchesByResultLike(
