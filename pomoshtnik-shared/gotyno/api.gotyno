@@ -1,16 +1,30 @@
 import commands
 
+union GetSearchesFilter {
+    SearchesByQueryLike: String
+    SearchesByResultLike: String
+    NoSearchesFilter
+}
+
+struct SearchesParameters {
+    filter: GetSearchesFilter
+}
+
 union ApiRequest {
-    GetSearches
+    GetSearches: GetSearchesFilter
+    GetSearch: String
     GetUsers
 }
 
 union ClientEvent {
     ExecuteApiRequest: ApiRequest
+    ClearApiRequests
+    SetGetSearchesFilter: GetSearchesFilter
 }
 
 union ServerEvent {
     SearchesResult: []commands.SearchCommand
+    SearchByUUIDResult: commands.SearchCommand
     UsersResult: []commands.BotUser
 }
 

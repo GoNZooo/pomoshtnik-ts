@@ -33,7 +33,11 @@ function View({state, dispatch}: Props) {
           </Route>
 
           <Route path="/searches">
-            <Searches searches={state.searches} dispatch={dispatch} />
+            <Searches
+              searches={state.searches}
+              dispatch={dispatch}
+              filter={state.getSearchesFilter}
+            />
           </Route>
         </Switch>
       </div>

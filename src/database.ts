@@ -1,6 +1,12 @@
 import {Db, MongoClient} from "mongodb";
 import * as Discord from "discord.js";
-import {BotUser, Command, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
+import {
+  BotUser,
+  Command,
+  SearchCommand,
+  SearchCommandTag,
+} from "../pomoshtnik-shared/gotyno/commands";
+import {assertUnreachable} from "../pomoshtnik-shared/utilities";
 
 export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");
@@ -13,6 +19,46 @@ export async function getSearches(database: Db): Promise<SearchCommand[]> {
     .sort("_id", DESCENDING_ORDER)
     .limit(10)
     .toArray();
+}
+
+export async function getSearchesByResultLike(
+  database: Db,
+  like: string
+): Promise<SearchCommand[]> {
+  const results = await database
+    .collection("searches")
+    .find({})
+    .sort("_id", DESCENDING_ORDER)
+    .toArray();
+
+  return results.filter((c: SearchCommand) => searchResult(c).match(like));
+}
+
+function searchResult(command: SearchCommand): string {
+  switch (command.type) {
+    case SearchCommandTag.ShowSearch: {
+      return command.data.type === "SearchSuccess" ? command.data.data.name : "";
+    }
+
+    case SearchCommandTag.MovieSearch: {
+      return command.data.type === "SearchSuccess" ? command.data.data.title ?? "" : "";
+    }
+
+    case SearchCommandTag.PersonSearch: {
+      return command.data.type === "SearchSuccess" ? command.data.data.name : "";
+    }
+
+    case SearchCommandTag.GitHubRepositorySearch: {
+      return command.data.type === "SearchSuccess" ? command.data.data.full_name : "";
+    }
+
+    case SearchCommandTag.GitHubUserSearch: {
+      return command.data.type === "SearchSuccess" ? command.data.data.login : "";
+    }
+
+    default:
+      return assertUnreachable(command);
+  }
 }
 
 export async function getUsers(database: Db): Promise<BotUser[]> {

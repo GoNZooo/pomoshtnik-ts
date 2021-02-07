@@ -4,7 +4,11 @@ import {
   ApiRequest,
   ApiRequestTag,
   ApplicationEvent,
+  ClearApiRequests,
+  EventFromClient,
   EventFromServer,
+  GetSearchesFilter,
+  SearchByUUIDResult,
   SearchesResult,
   UsersResult,
 } from "../../shared/gotyno/api";
@@ -23,24 +27,33 @@ export type Props = {
 
 function ApiExecutor({requests, dispatch}: Props) {
   React.useEffect(() => {
-    requests.forEach(async (r) => {
-      switch (r.type) {
-        case ApiRequestTag.GetSearches: {
-          const results = await getSearches();
-          dispatch(EventFromServer(SearchesResult(results)));
-          break;
-        }
+    if (requests.length !== 0) {
+      requests.forEach(async (r) => {
+        switch (r.type) {
+          case ApiRequestTag.GetSearches: {
+            const results = await getSearches(r.data);
+            dispatch(EventFromServer(SearchesResult(results)));
+            break;
+          }
 
-        case ApiRequestTag.GetUsers: {
-          const results = await getUsers();
-          dispatch(EventFromServer(UsersResult(results)));
-          break;
-        }
+          case ApiRequestTag.GetSearch: {
+            const results = await getSearchByUuid(r.data);
+            dispatch(EventFromServer(SearchByUUIDResult(results)));
+            break;
+          }
 
-        default:
-          assertUnreachable(r);
-      }
-    });
+          case ApiRequestTag.GetUsers: {
+            const results = await getUsers();
+            dispatch(EventFromServer(UsersResult(results)));
+            break;
+          }
+
+          default:
+            assertUnreachable(r);
+        }
+      });
+      dispatch(EventFromClient(ClearApiRequests()));
+    }
   }, [requests, dispatch]);
 
   return <></>;
@@ -48,8 +61,13 @@ function ApiExecutor({requests, dispatch}: Props) {
 
 export default ApiExecutor;
 
-async function getSearches(): Promise<SearchCommand[]> {
-  const result = await fetch("/searches", {mode: "cors"});
+async function getSearches(filter: GetSearchesFilter): Promise<SearchCommand[]> {
+  const result = await fetch("/searches", {
+    method: "POST",
+    mode: "cors",
+    body: JSON.stringify(filter),
+    headers: {"Content-Type": "application/json"},
+  });
   const json = await result.json();
   const validationResult = svt.validateArray(validateSearchCommand)(json);
 
@@ -57,6 +75,18 @@ async function getSearches(): Promise<SearchCommand[]> {
     return validationResult.value;
   } else {
     throw new Error(`Unable to validate searches: ${JSON.stringify(validationResult.errors)}`);
+  }
+}
+
+async function getSearchByUuid(uuid: string): Promise<SearchCommand> {
+  const result = await fetch("/search/" + uuid, {mode: "cors"});
+  const json = await result.json();
+  const validationResult = validateSearchCommand(json);
+
+  if (validationResult.type === "Valid") {
+    return validationResult.value;
+  } else {
+    throw new Error(`Unable to validate search: ${JSON.stringify(validationResult.errors)}`);
   }
 }
 

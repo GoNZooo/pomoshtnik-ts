@@ -40,8 +40,10 @@ import {
   addUserIfUnique,
   connectToDatabase,
   getSearches,
+  getSearchesByResultLike,
   getUsers,
 } from "./database";
+import {GetSearchesFilterTag, validateGetSearchesFilter} from "../pomoshtnik-shared/gotyno/api";
 
 const DEFAULT_APPLICATION_PORT = 2999;
 
@@ -64,9 +66,40 @@ application.use(cors());
 
 application.get("/searches", async function (request, response) {
   const searches = await getSearches(mongoDatabase);
-  console.log(searches);
 
   response.json(searches);
+});
+
+application.post("/searches", async function (request, response) {
+  const maybeFilter = validateGetSearchesFilter(request.body);
+  if (maybeFilter.type === "Valid") {
+    const filter = maybeFilter.value;
+    switch (filter.type) {
+      case GetSearchesFilterTag.SearchesByResultLike: {
+        const searches = await getSearchesByResultLike(mongoDatabase, filter.data);
+        response.json(searches);
+
+        return;
+      }
+
+      case GetSearchesFilterTag.SearchesByQueryLike: {
+        const searches: SearchCommand[] = [];
+        response.json(searches);
+
+        return;
+      }
+
+      case GetSearchesFilterTag.NoSearchesFilter: {
+        const searches = await getSearches(mongoDatabase);
+        response.json(searches);
+
+        return;
+      }
+
+      default:
+        return assertUnreachable(filter);
+    }
+  }
 });
 
 application.get("/users", async function (request, response) {

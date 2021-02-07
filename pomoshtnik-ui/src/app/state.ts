@@ -4,6 +4,8 @@ import {
   ApplicationEventTag,
   ClientEvent,
   ClientEventTag,
+  GetSearchesFilter,
+  NoSearchesFilter,
   ServerEvent,
   ServerEventTag,
 } from "../shared/gotyno/api";
@@ -14,12 +16,14 @@ export type State = {
   users: BotUser[];
   searches: SearchCommand[];
   apiRequests: ApiRequest[];
+  getSearchesFilter: GetSearchesFilter;
 };
 
 export const initialState: State = {
   users: [],
   searches: [],
   apiRequests: [],
+  getSearchesFilter: NoSearchesFilter(),
 };
 
 export function reduce(state: State, event: ApplicationEvent): State {
@@ -43,8 +47,16 @@ function handleClientEvent(state: State, event: ClientEvent): State {
       return {...state, apiRequests: [...state.apiRequests, event.data]};
     }
 
+    case ClientEventTag.ClearApiRequests: {
+      return {...state, apiRequests: []};
+    }
+
+    case ClientEventTag.SetGetSearchesFilter: {
+      return {...state, getSearchesFilter: event.data};
+    }
+
     default:
-      return assertUnreachable(event.type);
+      return assertUnreachable(event);
   }
 }
 
@@ -52,6 +64,10 @@ function handleServerEvent(state: State, event: ServerEvent): State {
   switch (event.type) {
     case ServerEventTag.SearchesResult: {
       return {...state, searches: event.data};
+    }
+
+    case ServerEventTag.SearchByUUIDResult: {
+      return {...state, searches: [event.data]};
     }
 
     case ServerEventTag.UsersResult: {
