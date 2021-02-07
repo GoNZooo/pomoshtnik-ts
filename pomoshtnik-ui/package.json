@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "@babel/core": "7.12.3",
+    "@material-ui/core": "^4.11.3",
+    "@material-ui/icons": "^4.11.2",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
     "@svgr/webpack": "5.5.0",
     "@testing-library/jest-dom": "^5.11.4",
@@ -80,9 +82,12 @@
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js",
-    "build:types": "gotyno -ts = src/app/gotyno/events.gotyno",
-    "postbuild:types": "yarn prettier --write src/app/gotyno/*.ts"
+    "build:types": "gotyno -ts = src/shared/gotyno/tmdb.gotyno src/shared/gotyno/github.gotyno src/shared/gotyno/commands.gotyno src/shared/gotyno/api.gotyno",
+    "build:types:watch": "watchexec -f \"*.gotyno\" -w src/app/gotyno \"yarn build:types\"",
+    "postbuild:types:watch": "yarn postbuild:types",
+    "postbuild:types": "yarn prettier --write src/app/gotyno/*.ts src/shared/gotyno/*.ts"
   },
+  "proxy": "http://localhost:2999/",
   "eslintConfig": {
     "extends": [
       "react-app",

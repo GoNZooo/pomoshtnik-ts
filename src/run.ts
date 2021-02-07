@@ -4,6 +4,7 @@ import * as tmdb from "./tmdb";
 import * as commands from "./commands";
 import {assertUnreachable} from "../pomoshtnik-shared/utilities";
 import express from "express";
+import cors from "cors";
 import {
   Command,
   CommandError,
@@ -58,6 +59,23 @@ if (mongoUri === "NOVALUE") throw new Error("No MongoDB URI specified.");
 const applicationPort = Number(process.env.PORT ?? DEFAULT_APPLICATION_PORT);
 
 const application = express();
+application.use(express.json());
+application.use(cors());
+
+application.get("/searches", async function (request, response) {
+  const searches = await getSearches(mongoDatabase);
+  console.log(searches);
+
+  response.json(searches);
+});
+
+application.get("/users", async function (request, response) {
+  const users = await getUsers(mongoDatabase);
+
+  response.json(users);
+});
+
+application.listen(applicationPort);
 
 const discordClient = new Discord.Client();
 
@@ -67,10 +85,6 @@ let mongoDatabase: Db;
   mongoClient = await MongoClient.connect(mongoUri);
   mongoDatabase = await connectToDatabase(mongoClient);
 })();
-
-application.use(express.json());
-
-application.listen(applicationPort);
 
 let tmdbImageBaseUrl: string;
 

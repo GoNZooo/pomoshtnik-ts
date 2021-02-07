@@ -1,25 +1,43 @@
 import * as React from "react";
-import {Switch, Route} from "react-router-dom";
+import {Switch, Route, BrowserRouter as Router, Link} from "react-router-dom";
 import Users from "./views/Users";
 import {State} from "./state";
-import {ClientEvent} from "./gotyno/events";
+import {ApplicationEvent} from "../shared/gotyno/api";
+import Searches from "./views/Searches";
 
 export type Props = {
   state: State;
-  dispatch: ClientEvent;
+  dispatch: React.Dispatch<ApplicationEvent>;
 };
 
-function View<E>({state, dispatch}: Props) {
+function View({state, dispatch}: Props) {
   return (
-    <Switch>
-      <Route path="/users">
-        <Users users={state.users} />
-      </Route>
+    <Router>
+      <div>
+        <nav>
+          <ul>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/users">Users</Link>
+            </li>
+            <li>
+              <Link to="/searches">Searches</Link>
+            </li>
+          </ul>
+        </nav>
+        <Switch>
+          <Route path="/users">
+            <Users users={state.users} dispatch={dispatch} />
+          </Route>
 
-      {/*<Route path="/searches">*/}
-      {/*  <Searches searches={state.searches} />*/}
-      {/*</Route>*/}
-    </Switch>
+          <Route path="/searches">
+            <Searches searches={state.searches} dispatch={dispatch} />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
   );
 }
 
