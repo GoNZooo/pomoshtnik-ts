@@ -37,6 +37,7 @@ import {
   addSearchCommandResult,
   addUserIfUnique,
   connectToDatabase,
+  deleteSearchByMongoId,
   getSearches,
   getSearchesByResultLike,
   getUsers,
@@ -98,6 +99,15 @@ application.post("/searches", async function (request, response) {
         return assertUnreachable(filter);
     }
   }
+});
+
+application.delete("/searches/:mongoId", async function (request, response) {
+  const mongoId = request.params.mongoId;
+  const result = await deleteSearchByMongoId(mongoDatabase, mongoId);
+  if (result) {
+    console.log("Deleted: ", mongoId);
+  }
+  response.json(result);
 });
 
 application.get("/users", async function (request, response) {

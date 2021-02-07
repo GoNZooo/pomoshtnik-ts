@@ -10,6 +10,7 @@ import {
   GetSearchesFilter,
   SearchByUUIDResult,
   SearchesResult,
+  SearchRemoved,
   UsersResult,
 } from "../../shared/gotyno/api";
 import {
@@ -19,6 +20,7 @@ import {
   validateSearchCommand,
 } from "../../shared/gotyno/commands";
 import {assertUnreachable} from "../../shared/utilities";
+import {None, Option, OptionTag, Some} from "../../shared/gotyno/utilityTypes";
 
 export type Props = {
   requests: ApiRequest[];
@@ -45,6 +47,16 @@ function ApiExecutor({requests, dispatch}: Props) {
           case ApiRequestTag.GetUsers: {
             const results = await getUsers();
             dispatch(EventFromServer(UsersResult(results)));
+            break;
+          }
+
+          case ApiRequestTag.DeleteSearch: {
+            const deleteResult = await deleteSearchByMongoId(r.data);
+            if (deleteResult.type === OptionTag.Some) {
+              dispatch(EventFromServer(SearchRemoved(deleteResult.data)));
+            } else {
+              throw new Error("Unable to delete search, TODO");
+            }
             break;
           }
 
@@ -100,4 +112,11 @@ async function getUsers(): Promise<BotUser[]> {
   } else {
     throw new Error(`Unable to validate searches: ${JSON.stringify(validationResult.errors)}`);
   }
+}
+
+async function deleteSearchByMongoId(id: string): Promise<Option<string>> {
+  const result = await fetch("/searches/" + id, {method: "DELETE", mode: "cors"});
+  const json = (await result.json()) as unknown;
+
+  return svt.isBoolean(json) ? Some(id) : None();
 }

@@ -1,9 +1,10 @@
 import * as React from "react";
 import {SearchCommand, SearchCommandTag, SearchResultTag} from "../../shared/gotyno/commands";
-import {assertUnreachable, getSearchFailureText} from "../../shared/utilities";
-import {GitHub as GitHubIcon, Movie, Person, Tv} from "@material-ui/icons";
+import {assertUnreachable, getSearchFailureText, hasMongoId} from "../../shared/utilities";
+import {Delete, GitHub as GitHubIcon, Movie, Person, Tv} from "@material-ui/icons";
 import {
   ApplicationEvent,
+  DeleteSearch,
   EventFromClient,
   ExecuteApiRequest,
   GetSearches,
@@ -86,12 +87,24 @@ function Searches({searches, dispatch, filter}: Props) {
   }
 
   const searchResults = searches.map((s) => {
+    function handleDeleteSearch({_id}: {_id: string}): (e: React.MouseEvent) => void {
+      return function () {
+        dispatch(EventFromClient(ExecuteApiRequest(DeleteSearch(_id))));
+      };
+    }
+
     const [icon, text] = getIconAndTextFromSearchCommand(s);
+    const removeListItemIcon = hasMongoId<SearchCommand>(s) ? (
+      <ListItemIcon onClick={handleDeleteSearch(s)}>
+        <Delete />
+      </ListItemIcon>
+    ) : null;
 
     return (
       <>
         <ListItemIcon>{icon}</ListItemIcon>
         <ListItemText>{text}</ListItemText>
+        {removeListItemIcon}
       </>
     );
   });

@@ -9,7 +9,7 @@ import {
   ServerEvent,
   ServerEventTag,
 } from "../shared/gotyno/api";
-import {assertUnreachable} from "../shared/utilities";
+import {assertUnreachable, hasMongoId} from "../shared/utilities";
 import {BotUser, SearchCommand} from "../shared/gotyno/commands";
 
 export type State = {
@@ -72,6 +72,13 @@ function handleServerEvent(state: State, event: ServerEvent): State {
 
     case ServerEventTag.UsersResult: {
       return {...state, users: event.data};
+    }
+
+    case ServerEventTag.SearchRemoved: {
+      const id = event.data;
+      const searches = state.searches.filter((s) => hasMongoId<SearchCommand>(s) && s._id !== id);
+
+      return {...state, searches};
     }
 
     default:

@@ -108,12 +108,13 @@ export function validateSearchesParameters(
   return svt.validate<SearchesParameters>(value, {filter: validateGetSearchesFilter});
 }
 
-export type ApiRequest = GetSearches | GetSearch | GetUsers;
+export type ApiRequest = GetSearches | GetSearch | GetUsers | DeleteSearch;
 
 export enum ApiRequestTag {
   GetSearches = "GetSearches",
   GetSearch = "GetSearch",
   GetUsers = "GetUsers",
+  DeleteSearch = "DeleteSearch",
 }
 
 export type GetSearches = {
@@ -130,6 +131,11 @@ export type GetUsers = {
   type: ApiRequestTag.GetUsers;
 };
 
+export type DeleteSearch = {
+  type: ApiRequestTag.DeleteSearch;
+  data: string;
+};
+
 export function GetSearches(data: GetSearchesFilter): GetSearches {
   return {type: ApiRequestTag.GetSearches, data};
 }
@@ -142,8 +148,14 @@ export function GetUsers(): GetUsers {
   return {type: ApiRequestTag.GetUsers};
 }
 
+export function DeleteSearch(data: string): DeleteSearch {
+  return {type: ApiRequestTag.DeleteSearch, data};
+}
+
 export function isApiRequest(value: unknown): value is ApiRequest {
-  return [isGetSearches, isGetSearch, isGetUsers].some((typePredicate) => typePredicate(value));
+  return [isGetSearches, isGetSearch, isGetUsers, isDeleteSearch].some((typePredicate) =>
+    typePredicate(value)
+  );
 }
 
 export function isGetSearches(value: unknown): value is GetSearches {
@@ -161,6 +173,13 @@ export function isGetUsers(value: unknown): value is GetUsers {
   return svt.isInterface<GetUsers>(value, {type: ApiRequestTag.GetUsers});
 }
 
+export function isDeleteSearch(value: unknown): value is DeleteSearch {
+  return svt.isInterface<DeleteSearch>(value, {
+    type: ApiRequestTag.DeleteSearch,
+    data: svt.isString,
+  });
+}
+
 export function validateApiRequest(value: unknown): svt.ValidationResult<ApiRequest> {
   return svt.validateWithTypeTag<ApiRequest>(
     value,
@@ -168,6 +187,7 @@ export function validateApiRequest(value: unknown): svt.ValidationResult<ApiRequ
       [ApiRequestTag.GetSearches]: validateGetSearches,
       [ApiRequestTag.GetSearch]: validateGetSearch,
       [ApiRequestTag.GetUsers]: validateGetUsers,
+      [ApiRequestTag.DeleteSearch]: validateDeleteSearch,
     },
     "type"
   );
@@ -186,6 +206,13 @@ export function validateGetSearch(value: unknown): svt.ValidationResult<GetSearc
 
 export function validateGetUsers(value: unknown): svt.ValidationResult<GetUsers> {
   return svt.validate<GetUsers>(value, {type: ApiRequestTag.GetUsers});
+}
+
+export function validateDeleteSearch(value: unknown): svt.ValidationResult<DeleteSearch> {
+  return svt.validate<DeleteSearch>(value, {
+    type: ApiRequestTag.DeleteSearch,
+    data: svt.validateString,
+  });
 }
 
 export type ClientEvent = ExecuteApiRequest | ClearApiRequests | SetGetSearchesFilter;
@@ -278,12 +305,13 @@ export function validateSetGetSearchesFilter(
   });
 }
 
-export type ServerEvent = SearchesResult | SearchByUUIDResult | UsersResult;
+export type ServerEvent = SearchesResult | SearchByUUIDResult | UsersResult | SearchRemoved;
 
 export enum ServerEventTag {
   SearchesResult = "SearchesResult",
   SearchByUUIDResult = "SearchByUUIDResult",
   UsersResult = "UsersResult",
+  SearchRemoved = "SearchRemoved",
 }
 
 export type SearchesResult = {
@@ -301,6 +329,11 @@ export type UsersResult = {
   data: commands.BotUser[];
 };
 
+export type SearchRemoved = {
+  type: ServerEventTag.SearchRemoved;
+  data: string;
+};
+
 export function SearchesResult(data: commands.SearchCommand[]): SearchesResult {
   return {type: ServerEventTag.SearchesResult, data};
 }
@@ -313,10 +346,17 @@ export function UsersResult(data: commands.BotUser[]): UsersResult {
   return {type: ServerEventTag.UsersResult, data};
 }
 
+export function SearchRemoved(data: string): SearchRemoved {
+  return {type: ServerEventTag.SearchRemoved, data};
+}
+
 export function isServerEvent(value: unknown): value is ServerEvent {
-  return [isSearchesResult, isSearchByUUIDResult, isUsersResult].some((typePredicate) =>
-    typePredicate(value)
-  );
+  return [
+    isSearchesResult,
+    isSearchByUUIDResult,
+    isUsersResult,
+    isSearchRemoved,
+  ].some((typePredicate) => typePredicate(value));
 }
 
 export function isSearchesResult(value: unknown): value is SearchesResult {
@@ -340,6 +380,13 @@ export function isUsersResult(value: unknown): value is UsersResult {
   });
 }
 
+export function isSearchRemoved(value: unknown): value is SearchRemoved {
+  return svt.isInterface<SearchRemoved>(value, {
+    type: ServerEventTag.SearchRemoved,
+    data: svt.isString,
+  });
+}
+
 export function validateServerEvent(value: unknown): svt.ValidationResult<ServerEvent> {
   return svt.validateWithTypeTag<ServerEvent>(
     value,
@@ -347,6 +394,7 @@ export function validateServerEvent(value: unknown): svt.ValidationResult<Server
       [ServerEventTag.SearchesResult]: validateSearchesResult,
       [ServerEventTag.SearchByUUIDResult]: validateSearchByUUIDResult,
       [ServerEventTag.UsersResult]: validateUsersResult,
+      [ServerEventTag.SearchRemoved]: validateSearchRemoved,
     },
     "type"
   );
@@ -372,6 +420,13 @@ export function validateUsersResult(value: unknown): svt.ValidationResult<UsersR
   return svt.validate<UsersResult>(value, {
     type: ServerEventTag.UsersResult,
     data: svt.validateArray(commands.validateBotUser),
+  });
+}
+
+export function validateSearchRemoved(value: unknown): svt.ValidationResult<SearchRemoved> {
+  return svt.validate<SearchRemoved>(value, {
+    type: ServerEventTag.SearchRemoved,
+    data: svt.validateString,
   });
 }
 

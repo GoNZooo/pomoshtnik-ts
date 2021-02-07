@@ -1,4 +1,4 @@
-import {Db, MongoClient} from "mongodb";
+import {Db, MongoClient, ObjectId} from "mongodb";
 import * as Discord from "discord.js";
 import {
   BotUser,
@@ -87,6 +87,12 @@ export async function addUserIfUnique(
   } else {
     await botUsers.replaceOne({nickname}, botUser);
   }
+}
+
+export async function deleteSearchByMongoId(database: Db, id: string): Promise<boolean> {
+  const result = await database.collection("searches").deleteOne({_id: new ObjectId(id)});
+
+  return result.result.ok === 1;
 }
 
 const DESCENDING_ORDER = -1;

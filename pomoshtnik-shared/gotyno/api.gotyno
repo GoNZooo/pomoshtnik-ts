@@ -14,6 +14,7 @@ union ApiRequest {
     GetSearches: GetSearchesFilter
     GetSearch: String
     GetUsers
+    DeleteSearch: String
 }
 
 union ClientEvent {
@@ -26,6 +27,7 @@ union ServerEvent {
     SearchesResult: []commands.SearchCommand
     SearchByUUIDResult: commands.SearchCommand
     UsersResult: []commands.BotUser
+    SearchRemoved: String
 }
 
 union ApplicationEvent {
