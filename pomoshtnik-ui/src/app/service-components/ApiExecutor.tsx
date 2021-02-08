@@ -74,7 +74,7 @@ function ApiExecutor({requests, dispatch}: Props) {
 export default ApiExecutor;
 
 async function getSearches(filter: GetSearchesFilter): Promise<SearchCommand[]> {
-  const result = await fetch("/searches", {
+  const result = await fetch("/api/searches", {
     method: "POST",
     mode: "cors",
     body: JSON.stringify(filter),
@@ -91,7 +91,7 @@ async function getSearches(filter: GetSearchesFilter): Promise<SearchCommand[]> 
 }
 
 async function getSearchByUuid(uuid: string): Promise<SearchCommand> {
-  const result = await fetch("/search/" + uuid, {mode: "cors"});
+  const result = await fetch("/api/search/" + uuid, {mode: "cors"});
   const json = await result.json();
   const validationResult = validateSearchCommand(json);
 
@@ -103,7 +103,7 @@ async function getSearchByUuid(uuid: string): Promise<SearchCommand> {
 }
 
 async function getUsers(): Promise<BotUser[]> {
-  const result = await fetch("/users");
+  const result = await fetch("/api/users");
   const json = await result.json();
   const validationResult = svt.validateArray(validateBotUser)(json);
 
@@ -115,7 +115,7 @@ async function getUsers(): Promise<BotUser[]> {
 }
 
 async function deleteSearchByMongoId(id: string): Promise<Option<string>> {
-  const result = await fetch("/searches/" + id, {method: "DELETE", mode: "cors"});
+  const result = await fetch("/api/searches/" + id, {method: "DELETE", mode: "cors"});
   const json = (await result.json()) as unknown;
 
   return svt.isBoolean(json) ? Some(id) : None();

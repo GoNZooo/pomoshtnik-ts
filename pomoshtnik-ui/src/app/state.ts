@@ -11,20 +11,27 @@ import {
 } from "../shared/gotyno/api";
 import {assertUnreachable, hasMongoId} from "../shared/utilities";
 import {BotUser, SearchCommand} from "../shared/gotyno/commands";
+import SocketIO from "socket.io-client";
 
 export type State = {
   users: BotUser[];
   searches: SearchCommand[];
   apiRequests: ApiRequest[];
   getSearchesFilter: GetSearchesFilter;
+  socket: SocketIOClient.Socket;
 };
 
-export const initialState: State = {
-  users: [],
-  searches: [],
-  apiRequests: [],
-  getSearchesFilter: NoSearchesFilter(),
-};
+export function initialState(): State {
+  const socket = SocketIO(`ws://${window.location.host}`, {autoConnect: false});
+
+  return {
+    users: [],
+    searches: [],
+    apiRequests: [],
+    getSearchesFilter: NoSearchesFilter(),
+    socket,
+  };
+}
 
 export function reduce(state: State, event: ApplicationEvent): State {
   switch (event.type) {
@@ -53,6 +60,14 @@ function handleClientEvent(state: State, event: ClientEvent): State {
 
     case ClientEventTag.SetGetSearchesFilter: {
       return {...state, getSearchesFilter: event.data};
+    }
+
+    case ClientEventTag.ConnectToWebSocket: {
+      console.log("Connecting to websocket");
+      const {socket} = state;
+      socket.connect();
+
+      return state;
     }
 
     default:

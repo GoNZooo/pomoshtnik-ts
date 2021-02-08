@@ -6,6 +6,7 @@ import ApiExecutor from "./app/service-components/ApiExecutor";
 import {createMuiTheme, ThemeProvider} from "@material-ui/core/styles";
 import {CssBaseline} from "@material-ui/core";
 import {lightBlue} from "@material-ui/core/colors";
+import SocketAdapter from "./app/service-components/SocketAdapter";
 
 const BASE_INTENSITY = 600;
 
@@ -19,11 +20,12 @@ const theme = createMuiTheme({
 });
 
 function App() {
-  const [state, dispatch] = React.useReducer(reduce, initialState);
+  const [state, dispatch] = React.useReducer(reduce, initialState());
 
   return (
     <div className="App">
       <ApiExecutor requests={state.apiRequests} dispatch={dispatch} />
+      <SocketAdapter socket={state.socket} dispatch={dispatch} />
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <View state={state} dispatch={dispatch} />

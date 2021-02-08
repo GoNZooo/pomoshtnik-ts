@@ -5,6 +5,8 @@ import * as tmdb from "./tmdb";
 import * as commands from "./commands";
 import {assertUnreachable, getSearchFailureText} from "../pomoshtnik-shared/utilities";
 import express from "express";
+import {createServer} from "http";
+import io from "socket.io";
 import cors from "cors";
 import {
   BotUser,
@@ -65,13 +67,13 @@ const application = express();
 application.use(express.json());
 application.use(cors());
 
-application.get("/searches", async function (request, response) {
+application.get("/api/searches", async function (request, response) {
   const searches = await getSearches(mongoDatabase);
 
   response.json(searches);
 });
 
-application.post("/searches", async function (request, response) {
+application.post("/api/searches", async function (request, response) {
   const maybeFilter = validateGetSearchesFilter(request.body);
   if (maybeFilter.type === "Valid") {
     const filter = maybeFilter.value;
@@ -103,7 +105,7 @@ application.post("/searches", async function (request, response) {
   }
 });
 
-application.delete("/searches/:mongoId", async function (request, response) {
+application.delete("/api/searches/:mongoId", async function (request, response) {
   const mongoId = request.params.mongoId;
   const result = await deleteSearchByMongoId(mongoDatabase, mongoId);
   if (result) {
@@ -112,20 +114,24 @@ application.delete("/searches/:mongoId", async function (request, response) {
   response.json(result);
 });
 
-application.get("/users", async function (request, response) {
+application.get("/api/users", async function (request, response) {
   const users = await getUsers(mongoDatabase, {});
 
   response.json(users);
 });
 
-// application.post("/users", async function (request, response) {
-//   const users = await getUsers(mongoDatabase, {});
-//
-//   response.json(users);
-// });
-//
-
-application.listen(applicationPort);
+const server = createServer(application);
+const socketServer = new io.Server(server);
+socketServer.on("connection", (socket) => {
+  console.log("Someone connected:", socket.id);
+  socket.on("initializeFromReact", () => {
+    console.log("FUCK!");
+  });
+  socket.on("disconnect", () => {
+    console.log("disconnected:", socket.id);
+  });
+});
+server.listen(applicationPort);
 
 const discordClient = new Discord.Client();
 

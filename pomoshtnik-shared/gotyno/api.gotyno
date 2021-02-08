@@ -21,6 +21,7 @@ union ClientEvent {
     ExecuteApiRequest: ApiRequest
     ClearApiRequests
     SetGetSearchesFilter: GetSearchesFilter
+    ConnectToWebSocket
 }
 
 union ServerEvent {

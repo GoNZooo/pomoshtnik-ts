@@ -67,6 +67,7 @@
     "sass-loader": "^10.0.5",
     "semver": "7.3.2",
     "simple-validation-tools": "^1.3.0",
+    "socket.io-client": "^3.1.1",
     "style-loader": "1.3.0",
     "terser-webpack-plugin": "4.2.3",
     "ts-pnp": "1.2.0",
@@ -87,7 +88,6 @@
     "postbuild:types:watch": "yarn postbuild:types",
     "postbuild:types": "yarn prettier --write src/app/gotyno/*.ts src/shared/gotyno/*.ts"
   },
-  "proxy": "http://localhost:2999/",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -108,6 +108,8 @@
   },
   "devDependencies": {
     "@types/react-router-dom": "^5.1.7",
+    "@types/socket.io-client": "^1.4.35",
+    "http-proxy-middleware": "^1.0.6",
     "prettier": "^2.2.1"
   },
   "jest": {
