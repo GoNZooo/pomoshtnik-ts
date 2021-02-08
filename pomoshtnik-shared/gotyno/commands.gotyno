@@ -1,40 +1,6 @@
 import tmdb
 import github
 
-struct DiscordErrorData {
-    commandText: String
-    name: String
-    message: String
-    method: String
-    path: String
-    code: U32
-    httpStatus: U32
-}
-
-struct ValidationErrorData {
-    commandText: String
-    reason: String
-}
-
-union CommandError {
-    DiscordError: DiscordErrorData
-    ValidationError: ValidationErrorData
-    NoResults: String
-}
-
-union SearchResult <T>{
-    SearchSuccess: T
-    SearchFailure: CommandError
-}
-
-union SearchCommand {
-    PersonSearch: SearchResult<tmdb.Person>
-    MovieSearch: SearchResult<tmdb.MovieData>
-    ShowSearch: SearchResult<tmdb.Show>
-    GitHubUserSearch: SearchResult<github.UserData>
-    GitHubRepositorySearch: SearchResult<github.Repository>
-}
-
 union RepositorySearchType {
     RepositoryByName: String
     RepositoryByTopics: []String
@@ -52,8 +18,49 @@ union Command {
     GitHubRepository: RepositorySearchType
 }
 
+struct DiscordErrorData {
+    commandText: String
+    name: String
+    message: String
+    method: String
+    path: String
+    code: U32
+    httpStatus: U32
+}
+
+struct ValidationErrorData {
+    commandText: String
+    reason: String
+}
+
 struct BotUser {
     nickname: String
     lastCommand: Command
     lastSeen: String
+    uuid: String
+}
+
+union CommandError {
+    DiscordError: DiscordErrorData
+    ValidationError: ValidationErrorData
+    NoResults: String
+}
+
+union SearchResult <T>{
+    SearchSuccess: T
+    SearchFailure: CommandError
+}
+
+struct SearchEntry <T>{
+    user: BotUser
+    uuid: String
+    result: SearchResult<T>
+}
+
+union SearchCommand {
+    PersonSearch: SearchEntry<tmdb.Person>
+    MovieSearch: SearchEntry<tmdb.MovieData>
+    ShowSearch: SearchEntry<tmdb.Show>
+    GitHubUserSearch: SearchEntry<github.UserData>
+    GitHubRepositorySearch: SearchEntry<github.Repository>
 }

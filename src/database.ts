@@ -1,11 +1,5 @@
-import {Db, MongoClient, ObjectId} from "mongodb";
-import * as Discord from "discord.js";
-import {
-  BotUser,
-  Command,
-  SearchCommand,
-  SearchCommandTag,
-} from "../pomoshtnik-shared/gotyno/commands";
+import {Db, FilterQuery, MongoClient, ObjectId} from "mongodb";
+import {BotUser, SearchCommand, SearchCommandTag} from "../pomoshtnik-shared/gotyno/commands";
 import {assertUnreachable} from "../pomoshtnik-shared/utilities";
 
 export function connectToDatabase(client: MongoClient): Db {
@@ -34,23 +28,25 @@ export async function getSearchesByResultLike(
 function searchResult(command: SearchCommand): string {
   switch (command.type) {
     case SearchCommandTag.ShowSearch: {
-      return command.data.type === "SearchSuccess" ? command.data.data.name : "";
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
     }
 
     case SearchCommandTag.MovieSearch: {
-      return command.data.type === "SearchSuccess" ? command.data.data.title ?? "" : "";
+      return command.data.result.type === "SearchSuccess"
+        ? command.data.result.data.title ?? ""
+        : "";
     }
 
     case SearchCommandTag.PersonSearch: {
-      return command.data.type === "SearchSuccess" ? command.data.data.name : "";
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
     }
 
     case SearchCommandTag.GitHubRepositorySearch: {
-      return command.data.type === "SearchSuccess" ? command.data.data.full_name : "";
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.full_name : "";
     }
 
     case SearchCommandTag.GitHubUserSearch: {
-      return command.data.type === "SearchSuccess" ? command.data.data.login : "";
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.login : "";
     }
 
     default:
@@ -58,34 +54,43 @@ function searchResult(command: SearchCommand): string {
   }
 }
 
-export async function getUsers(database: Db): Promise<BotUser[]> {
-  return await database
-    .collection("users")
-    .find({})
-    .sort("lastSeen", DESCENDING_ORDER)
-    .limit(10)
-    .toArray();
+export type GetUsersOptions = {
+  limit?: number;
+  sort?: [string, "ascending" | "descending"];
+  filter?: FilterQuery<unknown>;
+};
+
+export async function getUsers(database: Db, options: GetUsersOptions): Promise<BotUser[]> {
+  const collection = database.collection("users");
+  const filter = options.filter ?? {};
+  const filtered = collection.find(filter);
+  const sorted =
+    options.sort !== undefined
+      ? filtered.sort(
+          options.sort[0],
+          options.sort[1] === "descending" ? DESCENDING_ORDER : ASCENDING_ORDER
+        )
+      : filtered;
+  const limited = options.limit !== undefined ? sorted.limit(options.limit) : sorted;
+
+  return await limited.toArray();
 }
 
-export async function addSearchCommandResult(database: Db, result: SearchCommand): Promise<void> {
-  await database.collection("searches").insertOne(result);
-}
-
-export async function addUserIfUnique(
+export async function addSearchCommandResult<T>(
   database: Db,
-  user: Discord.User,
-  lastCommand: Command
+  command: SearchCommand
 ): Promise<void> {
-  const lastSeen = new Date().toISOString();
-  const nickname = user.username;
-  const botUsers = await database.collection("users");
-  const botUser = {lastCommand, lastSeen, nickname};
+  await database.collection("searches").insertOne(command);
+}
 
-  const foundUser: unknown = await botUsers.findOne({nickname});
+export async function addUserIfUnique(database: Db, user: BotUser): Promise<void> {
+  const botUsers = await database.collection("users");
+
+  const foundUser: unknown = await botUsers.findOne({nickname: user.nickname});
   if (foundUser === null) {
-    await botUsers.insertOne(botUser);
+    await botUsers.insertOne(user);
   } else {
-    await botUsers.replaceOne({nickname}, botUser);
+    await botUsers.replaceOne({nickname: user.nickname}, user);
   }
 }
 
@@ -96,3 +101,4 @@ export async function deleteSearchByMongoId(database: Db, id: string): Promise<b
 }
 
 const DESCENDING_ORDER = -1;
+const ASCENDING_ORDER = 1;

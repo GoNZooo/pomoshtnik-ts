@@ -15,6 +15,7 @@
     "@types/jest": "^26.0.4",
     "@types/mongodb": "^3.6.5",
     "@types/node": "^14.0.23",
+    "@types/uuid": "^8.3.0",
     "nodemon": "^2.0.4",
     "prettier": "^2.1.2",
     "ts-jest": "^26.1.2",
@@ -30,6 +31,7 @@
     "express": "^4.17.1",
     "gotyno": "0.3.9",
     "isomorphic-fetch": "^2.2.1",
-    "mongodb": "^3.6.4"
+    "mongodb": "^3.6.4",
+    "uuid": "^8.3.2"
   }
 }

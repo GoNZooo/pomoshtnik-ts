@@ -4,391 +4,6 @@ import * as tmdb from "./tmdb";
 
 import * as github from "./github";
 
-export type DiscordErrorData = {
-  commandText: string;
-  name: string;
-  message: string;
-  method: string;
-  path: string;
-  code: number;
-  httpStatus: number;
-};
-
-export function isDiscordErrorData(value: unknown): value is DiscordErrorData {
-  return svt.isInterface<DiscordErrorData>(value, {
-    commandText: svt.isString,
-    name: svt.isString,
-    message: svt.isString,
-    method: svt.isString,
-    path: svt.isString,
-    code: svt.isNumber,
-    httpStatus: svt.isNumber,
-  });
-}
-
-export function validateDiscordErrorData(value: unknown): svt.ValidationResult<DiscordErrorData> {
-  return svt.validate<DiscordErrorData>(value, {
-    commandText: svt.validateString,
-    name: svt.validateString,
-    message: svt.validateString,
-    method: svt.validateString,
-    path: svt.validateString,
-    code: svt.validateNumber,
-    httpStatus: svt.validateNumber,
-  });
-}
-
-export type ValidationErrorData = {
-  commandText: string;
-  reason: string;
-};
-
-export function isValidationErrorData(value: unknown): value is ValidationErrorData {
-  return svt.isInterface<ValidationErrorData>(value, {
-    commandText: svt.isString,
-    reason: svt.isString,
-  });
-}
-
-export function validateValidationErrorData(
-  value: unknown
-): svt.ValidationResult<ValidationErrorData> {
-  return svt.validate<ValidationErrorData>(value, {
-    commandText: svt.validateString,
-    reason: svt.validateString,
-  });
-}
-
-export type CommandError = DiscordError | ValidationError | NoResults;
-
-export enum CommandErrorTag {
-  DiscordError = "DiscordError",
-  ValidationError = "ValidationError",
-  NoResults = "NoResults",
-}
-
-export type DiscordError = {
-  type: CommandErrorTag.DiscordError;
-  data: DiscordErrorData;
-};
-
-export type ValidationError = {
-  type: CommandErrorTag.ValidationError;
-  data: ValidationErrorData;
-};
-
-export type NoResults = {
-  type: CommandErrorTag.NoResults;
-  data: string;
-};
-
-export function DiscordError(data: DiscordErrorData): DiscordError {
-  return {type: CommandErrorTag.DiscordError, data};
-}
-
-export function ValidationError(data: ValidationErrorData): ValidationError {
-  return {type: CommandErrorTag.ValidationError, data};
-}
-
-export function NoResults(data: string): NoResults {
-  return {type: CommandErrorTag.NoResults, data};
-}
-
-export function isCommandError(value: unknown): value is CommandError {
-  return [isDiscordError, isValidationError, isNoResults].some((typePredicate) =>
-    typePredicate(value)
-  );
-}
-
-export function isDiscordError(value: unknown): value is DiscordError {
-  return svt.isInterface<DiscordError>(value, {
-    type: CommandErrorTag.DiscordError,
-    data: isDiscordErrorData,
-  });
-}
-
-export function isValidationError(value: unknown): value is ValidationError {
-  return svt.isInterface<ValidationError>(value, {
-    type: CommandErrorTag.ValidationError,
-    data: isValidationErrorData,
-  });
-}
-
-export function isNoResults(value: unknown): value is NoResults {
-  return svt.isInterface<NoResults>(value, {type: CommandErrorTag.NoResults, data: svt.isString});
-}
-
-export function validateCommandError(value: unknown): svt.ValidationResult<CommandError> {
-  return svt.validateWithTypeTag<CommandError>(
-    value,
-    {
-      [CommandErrorTag.DiscordError]: validateDiscordError,
-      [CommandErrorTag.ValidationError]: validateValidationError,
-      [CommandErrorTag.NoResults]: validateNoResults,
-    },
-    "type"
-  );
-}
-
-export function validateDiscordError(value: unknown): svt.ValidationResult<DiscordError> {
-  return svt.validate<DiscordError>(value, {
-    type: CommandErrorTag.DiscordError,
-    data: validateDiscordErrorData,
-  });
-}
-
-export function validateValidationError(value: unknown): svt.ValidationResult<ValidationError> {
-  return svt.validate<ValidationError>(value, {
-    type: CommandErrorTag.ValidationError,
-    data: validateValidationErrorData,
-  });
-}
-
-export function validateNoResults(value: unknown): svt.ValidationResult<NoResults> {
-  return svt.validate<NoResults>(value, {
-    type: CommandErrorTag.NoResults,
-    data: svt.validateString,
-  });
-}
-
-export type SearchResult<T> = SearchSuccess<T> | SearchFailure;
-
-export enum SearchResultTag {
-  SearchSuccess = "SearchSuccess",
-  SearchFailure = "SearchFailure",
-}
-
-export type SearchSuccess<T> = {
-  type: SearchResultTag.SearchSuccess;
-  data: T;
-};
-
-export type SearchFailure = {
-  type: SearchResultTag.SearchFailure;
-  data: CommandError;
-};
-
-export function SearchSuccess<T>(data: T): SearchSuccess<T> {
-  return {type: SearchResultTag.SearchSuccess, data};
-}
-
-export function SearchFailure(data: CommandError): SearchFailure {
-  return {type: SearchResultTag.SearchFailure, data};
-}
-
-export function isSearchResult<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchResult<T>> {
-  return function isSearchResultT(value: unknown): value is SearchResult<T> {
-    return [isSearchSuccess(isT), isSearchFailure].some((typePredicate) => typePredicate(value));
-  };
-}
-
-export function isSearchSuccess<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchSuccess<T>> {
-  return function isSearchSuccessT(value: unknown): value is SearchSuccess<T> {
-    return svt.isInterface<SearchSuccess<T>>(value, {
-      type: SearchResultTag.SearchSuccess,
-      data: isT,
-    });
-  };
-}
-
-export function isSearchFailure(value: unknown): value is SearchFailure {
-  return svt.isInterface<SearchFailure>(value, {
-    type: SearchResultTag.SearchFailure,
-    data: isCommandError,
-  });
-}
-
-export function validateSearchResult<T>(
-  validateT: svt.Validator<T>
-): svt.Validator<SearchResult<T>> {
-  return function validateSearchResultT(value: unknown): svt.ValidationResult<SearchResult<T>> {
-    return svt.validateWithTypeTag<SearchResult<T>>(
-      value,
-      {
-        [SearchResultTag.SearchSuccess]: validateSearchSuccess(validateT),
-        [SearchResultTag.SearchFailure]: validateSearchFailure,
-      },
-      "type"
-    );
-  };
-}
-
-export function validateSearchSuccess<T>(
-  validateT: svt.Validator<T>
-): svt.Validator<SearchSuccess<T>> {
-  return function validateSearchSuccessT(value: unknown): svt.ValidationResult<SearchSuccess<T>> {
-    return svt.validate<SearchSuccess<T>>(value, {
-      type: SearchResultTag.SearchSuccess,
-      data: validateT,
-    });
-  };
-}
-
-export function validateSearchFailure(value: unknown): svt.ValidationResult<SearchFailure> {
-  return svt.validate<SearchFailure>(value, {
-    type: SearchResultTag.SearchFailure,
-    data: validateCommandError,
-  });
-}
-
-export type SearchCommand =
-  | PersonSearch
-  | MovieSearch
-  | ShowSearch
-  | GitHubUserSearch
-  | GitHubRepositorySearch;
-
-export enum SearchCommandTag {
-  PersonSearch = "PersonSearch",
-  MovieSearch = "MovieSearch",
-  ShowSearch = "ShowSearch",
-  GitHubUserSearch = "GitHubUserSearch",
-  GitHubRepositorySearch = "GitHubRepositorySearch",
-}
-
-export type PersonSearch = {
-  type: SearchCommandTag.PersonSearch;
-  data: SearchResult<tmdb.Person>;
-};
-
-export type MovieSearch = {
-  type: SearchCommandTag.MovieSearch;
-  data: SearchResult<tmdb.MovieData>;
-};
-
-export type ShowSearch = {
-  type: SearchCommandTag.ShowSearch;
-  data: SearchResult<tmdb.Show>;
-};
-
-export type GitHubUserSearch = {
-  type: SearchCommandTag.GitHubUserSearch;
-  data: SearchResult<github.UserData>;
-};
-
-export type GitHubRepositorySearch = {
-  type: SearchCommandTag.GitHubRepositorySearch;
-  data: SearchResult<github.Repository>;
-};
-
-export function PersonSearch(data: SearchResult<tmdb.Person>): PersonSearch {
-  return {type: SearchCommandTag.PersonSearch, data};
-}
-
-export function MovieSearch(data: SearchResult<tmdb.MovieData>): MovieSearch {
-  return {type: SearchCommandTag.MovieSearch, data};
-}
-
-export function ShowSearch(data: SearchResult<tmdb.Show>): ShowSearch {
-  return {type: SearchCommandTag.ShowSearch, data};
-}
-
-export function GitHubUserSearch(data: SearchResult<github.UserData>): GitHubUserSearch {
-  return {type: SearchCommandTag.GitHubUserSearch, data};
-}
-
-export function GitHubRepositorySearch(
-  data: SearchResult<github.Repository>
-): GitHubRepositorySearch {
-  return {type: SearchCommandTag.GitHubRepositorySearch, data};
-}
-
-export function isSearchCommand(value: unknown): value is SearchCommand {
-  return [
-    isPersonSearch,
-    isMovieSearch,
-    isShowSearch,
-    isGitHubUserSearch,
-    isGitHubRepositorySearch,
-  ].some((typePredicate) => typePredicate(value));
-}
-
-export function isPersonSearch(value: unknown): value is PersonSearch {
-  return svt.isInterface<PersonSearch>(value, {
-    type: SearchCommandTag.PersonSearch,
-    data: isSearchResult(tmdb.isPerson),
-  });
-}
-
-export function isMovieSearch(value: unknown): value is MovieSearch {
-  return svt.isInterface<MovieSearch>(value, {
-    type: SearchCommandTag.MovieSearch,
-    data: isSearchResult(tmdb.isMovieData),
-  });
-}
-
-export function isShowSearch(value: unknown): value is ShowSearch {
-  return svt.isInterface<ShowSearch>(value, {
-    type: SearchCommandTag.ShowSearch,
-    data: isSearchResult(tmdb.isShow),
-  });
-}
-
-export function isGitHubUserSearch(value: unknown): value is GitHubUserSearch {
-  return svt.isInterface<GitHubUserSearch>(value, {
-    type: SearchCommandTag.GitHubUserSearch,
-    data: isSearchResult(github.isUserData),
-  });
-}
-
-export function isGitHubRepositorySearch(value: unknown): value is GitHubRepositorySearch {
-  return svt.isInterface<GitHubRepositorySearch>(value, {
-    type: SearchCommandTag.GitHubRepositorySearch,
-    data: isSearchResult(github.isRepository),
-  });
-}
-
-export function validateSearchCommand(value: unknown): svt.ValidationResult<SearchCommand> {
-  return svt.validateWithTypeTag<SearchCommand>(
-    value,
-    {
-      [SearchCommandTag.PersonSearch]: validatePersonSearch,
-      [SearchCommandTag.MovieSearch]: validateMovieSearch,
-      [SearchCommandTag.ShowSearch]: validateShowSearch,
-      [SearchCommandTag.GitHubUserSearch]: validateGitHubUserSearch,
-      [SearchCommandTag.GitHubRepositorySearch]: validateGitHubRepositorySearch,
-    },
-    "type"
-  );
-}
-
-export function validatePersonSearch(value: unknown): svt.ValidationResult<PersonSearch> {
-  return svt.validate<PersonSearch>(value, {
-    type: SearchCommandTag.PersonSearch,
-    data: validateSearchResult(tmdb.validatePerson),
-  });
-}
-
-export function validateMovieSearch(value: unknown): svt.ValidationResult<MovieSearch> {
-  return svt.validate<MovieSearch>(value, {
-    type: SearchCommandTag.MovieSearch,
-    data: validateSearchResult(tmdb.validateMovieData),
-  });
-}
-
-export function validateShowSearch(value: unknown): svt.ValidationResult<ShowSearch> {
-  return svt.validate<ShowSearch>(value, {
-    type: SearchCommandTag.ShowSearch,
-    data: validateSearchResult(tmdb.validateShow),
-  });
-}
-
-export function validateGitHubUserSearch(value: unknown): svt.ValidationResult<GitHubUserSearch> {
-  return svt.validate<GitHubUserSearch>(value, {
-    type: SearchCommandTag.GitHubUserSearch,
-    data: validateSearchResult(github.validateUserData),
-  });
-}
-
-export function validateGitHubRepositorySearch(
-  value: unknown
-): svt.ValidationResult<GitHubRepositorySearch> {
-  return svt.validate<GitHubRepositorySearch>(value, {
-    type: SearchCommandTag.GitHubRepositorySearch,
-    data: validateSearchResult(github.validateRepository),
-  });
-}
-
 export type RepositorySearchType = RepositoryByName | RepositoryByTopics;
 
 export enum RepositorySearchTypeTag {
@@ -671,10 +286,66 @@ export function validateGitHubRepository(value: unknown): svt.ValidationResult<G
   });
 }
 
+export type DiscordErrorData = {
+  commandText: string;
+  name: string;
+  message: string;
+  method: string;
+  path: string;
+  code: number;
+  httpStatus: number;
+};
+
+export function isDiscordErrorData(value: unknown): value is DiscordErrorData {
+  return svt.isInterface<DiscordErrorData>(value, {
+    commandText: svt.isString,
+    name: svt.isString,
+    message: svt.isString,
+    method: svt.isString,
+    path: svt.isString,
+    code: svt.isNumber,
+    httpStatus: svt.isNumber,
+  });
+}
+
+export function validateDiscordErrorData(value: unknown): svt.ValidationResult<DiscordErrorData> {
+  return svt.validate<DiscordErrorData>(value, {
+    commandText: svt.validateString,
+    name: svt.validateString,
+    message: svt.validateString,
+    method: svt.validateString,
+    path: svt.validateString,
+    code: svt.validateNumber,
+    httpStatus: svt.validateNumber,
+  });
+}
+
+export type ValidationErrorData = {
+  commandText: string;
+  reason: string;
+};
+
+export function isValidationErrorData(value: unknown): value is ValidationErrorData {
+  return svt.isInterface<ValidationErrorData>(value, {
+    commandText: svt.isString,
+    reason: svt.isString,
+  });
+}
+
+export function validateValidationErrorData(
+  value: unknown
+): svt.ValidationResult<ValidationErrorData> {
+  return svt.validate<ValidationErrorData>(value, {
+    commandText: svt.validateString,
+    reason: svt.validateString,
+  });
+}
+
 export type BotUser = {
   nickname: string;
   lastCommand: Command;
   lastSeen: string;
+  uuid: string;
 };
 
 export function isBotUser(value: unknown): value is BotUser {
@@ -682,6 +353,7 @@ export function isBotUser(value: unknown): value is BotUser {
     nickname: svt.isString,
     lastCommand: isCommand,
     lastSeen: svt.isString,
+    uuid: svt.isString,
   });
 }
 
@@ -690,5 +362,362 @@ export function validateBotUser(value: unknown): svt.ValidationResult<BotUser> {
     nickname: svt.validateString,
     lastCommand: validateCommand,
     lastSeen: svt.validateString,
+    uuid: svt.validateString,
+  });
+}
+
+export type CommandError = DiscordError | ValidationError | NoResults;
+
+export enum CommandErrorTag {
+  DiscordError = "DiscordError",
+  ValidationError = "ValidationError",
+  NoResults = "NoResults",
+}
+
+export type DiscordError = {
+  type: CommandErrorTag.DiscordError;
+  data: DiscordErrorData;
+};
+
+export type ValidationError = {
+  type: CommandErrorTag.ValidationError;
+  data: ValidationErrorData;
+};
+
+export type NoResults = {
+  type: CommandErrorTag.NoResults;
+  data: string;
+};
+
+export function DiscordError(data: DiscordErrorData): DiscordError {
+  return {type: CommandErrorTag.DiscordError, data};
+}
+
+export function ValidationError(data: ValidationErrorData): ValidationError {
+  return {type: CommandErrorTag.ValidationError, data};
+}
+
+export function NoResults(data: string): NoResults {
+  return {type: CommandErrorTag.NoResults, data};
+}
+
+export function isCommandError(value: unknown): value is CommandError {
+  return [isDiscordError, isValidationError, isNoResults].some((typePredicate) =>
+    typePredicate(value)
+  );
+}
+
+export function isDiscordError(value: unknown): value is DiscordError {
+  return svt.isInterface<DiscordError>(value, {
+    type: CommandErrorTag.DiscordError,
+    data: isDiscordErrorData,
+  });
+}
+
+export function isValidationError(value: unknown): value is ValidationError {
+  return svt.isInterface<ValidationError>(value, {
+    type: CommandErrorTag.ValidationError,
+    data: isValidationErrorData,
+  });
+}
+
+export function isNoResults(value: unknown): value is NoResults {
+  return svt.isInterface<NoResults>(value, {type: CommandErrorTag.NoResults, data: svt.isString});
+}
+
+export function validateCommandError(value: unknown): svt.ValidationResult<CommandError> {
+  return svt.validateWithTypeTag<CommandError>(
+    value,
+    {
+      [CommandErrorTag.DiscordError]: validateDiscordError,
+      [CommandErrorTag.ValidationError]: validateValidationError,
+      [CommandErrorTag.NoResults]: validateNoResults,
+    },
+    "type"
+  );
+}
+
+export function validateDiscordError(value: unknown): svt.ValidationResult<DiscordError> {
+  return svt.validate<DiscordError>(value, {
+    type: CommandErrorTag.DiscordError,
+    data: validateDiscordErrorData,
+  });
+}
+
+export function validateValidationError(value: unknown): svt.ValidationResult<ValidationError> {
+  return svt.validate<ValidationError>(value, {
+    type: CommandErrorTag.ValidationError,
+    data: validateValidationErrorData,
+  });
+}
+
+export function validateNoResults(value: unknown): svt.ValidationResult<NoResults> {
+  return svt.validate<NoResults>(value, {
+    type: CommandErrorTag.NoResults,
+    data: svt.validateString,
+  });
+}
+
+export type SearchResult<T> = SearchSuccess<T> | SearchFailure;
+
+export enum SearchResultTag {
+  SearchSuccess = "SearchSuccess",
+  SearchFailure = "SearchFailure",
+}
+
+export type SearchSuccess<T> = {
+  type: SearchResultTag.SearchSuccess;
+  data: T;
+};
+
+export type SearchFailure = {
+  type: SearchResultTag.SearchFailure;
+  data: CommandError;
+};
+
+export function SearchSuccess<T>(data: T): SearchSuccess<T> {
+  return {type: SearchResultTag.SearchSuccess, data};
+}
+
+export function SearchFailure(data: CommandError): SearchFailure {
+  return {type: SearchResultTag.SearchFailure, data};
+}
+
+export function isSearchResult<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchResult<T>> {
+  return function isSearchResultT(value: unknown): value is SearchResult<T> {
+    return [isSearchSuccess(isT), isSearchFailure].some((typePredicate) => typePredicate(value));
+  };
+}
+
+export function isSearchSuccess<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchSuccess<T>> {
+  return function isSearchSuccessT(value: unknown): value is SearchSuccess<T> {
+    return svt.isInterface<SearchSuccess<T>>(value, {
+      type: SearchResultTag.SearchSuccess,
+      data: isT,
+    });
+  };
+}
+
+export function isSearchFailure(value: unknown): value is SearchFailure {
+  return svt.isInterface<SearchFailure>(value, {
+    type: SearchResultTag.SearchFailure,
+    data: isCommandError,
+  });
+}
+
+export function validateSearchResult<T>(
+  validateT: svt.Validator<T>
+): svt.Validator<SearchResult<T>> {
+  return function validateSearchResultT(value: unknown): svt.ValidationResult<SearchResult<T>> {
+    return svt.validateWithTypeTag<SearchResult<T>>(
+      value,
+      {
+        [SearchResultTag.SearchSuccess]: validateSearchSuccess(validateT),
+        [SearchResultTag.SearchFailure]: validateSearchFailure,
+      },
+      "type"
+    );
+  };
+}
+
+export function validateSearchSuccess<T>(
+  validateT: svt.Validator<T>
+): svt.Validator<SearchSuccess<T>> {
+  return function validateSearchSuccessT(value: unknown): svt.ValidationResult<SearchSuccess<T>> {
+    return svt.validate<SearchSuccess<T>>(value, {
+      type: SearchResultTag.SearchSuccess,
+      data: validateT,
+    });
+  };
+}
+
+export function validateSearchFailure(value: unknown): svt.ValidationResult<SearchFailure> {
+  return svt.validate<SearchFailure>(value, {
+    type: SearchResultTag.SearchFailure,
+    data: validateCommandError,
+  });
+}
+
+export type SearchEntry<T> = {
+  user: BotUser;
+  uuid: string;
+  result: SearchResult<T>;
+};
+
+export function isSearchEntry<T>(isT: svt.TypePredicate<T>): svt.TypePredicate<SearchEntry<T>> {
+  return function isSearchEntryT(value: unknown): value is SearchEntry<T> {
+    return svt.isInterface<SearchEntry<T>>(value, {
+      user: isBotUser,
+      uuid: svt.isString,
+      result: isSearchResult(isT),
+    });
+  };
+}
+
+export function validateSearchEntry<T>(validateT: svt.Validator<T>): svt.Validator<SearchEntry<T>> {
+  return function validateSearchEntryT(value: unknown): svt.ValidationResult<SearchEntry<T>> {
+    return svt.validate<SearchEntry<T>>(value, {
+      user: validateBotUser,
+      uuid: svt.validateString,
+      result: validateSearchResult(validateT),
+    });
+  };
+}
+
+export type SearchCommand =
+  | PersonSearch
+  | MovieSearch
+  | ShowSearch
+  | GitHubUserSearch
+  | GitHubRepositorySearch;
+
+export enum SearchCommandTag {
+  PersonSearch = "PersonSearch",
+  MovieSearch = "MovieSearch",
+  ShowSearch = "ShowSearch",
+  GitHubUserSearch = "GitHubUserSearch",
+  GitHubRepositorySearch = "GitHubRepositorySearch",
+}
+
+export type PersonSearch = {
+  type: SearchCommandTag.PersonSearch;
+  data: SearchEntry<tmdb.Person>;
+};
+
+export type MovieSearch = {
+  type: SearchCommandTag.MovieSearch;
+  data: SearchEntry<tmdb.MovieData>;
+};
+
+export type ShowSearch = {
+  type: SearchCommandTag.ShowSearch;
+  data: SearchEntry<tmdb.Show>;
+};
+
+export type GitHubUserSearch = {
+  type: SearchCommandTag.GitHubUserSearch;
+  data: SearchEntry<github.UserData>;
+};
+
+export type GitHubRepositorySearch = {
+  type: SearchCommandTag.GitHubRepositorySearch;
+  data: SearchEntry<github.Repository>;
+};
+
+export function PersonSearch(data: SearchEntry<tmdb.Person>): PersonSearch {
+  return {type: SearchCommandTag.PersonSearch, data};
+}
+
+export function MovieSearch(data: SearchEntry<tmdb.MovieData>): MovieSearch {
+  return {type: SearchCommandTag.MovieSearch, data};
+}
+
+export function ShowSearch(data: SearchEntry<tmdb.Show>): ShowSearch {
+  return {type: SearchCommandTag.ShowSearch, data};
+}
+
+export function GitHubUserSearch(data: SearchEntry<github.UserData>): GitHubUserSearch {
+  return {type: SearchCommandTag.GitHubUserSearch, data};
+}
+
+export function GitHubRepositorySearch(
+  data: SearchEntry<github.Repository>
+): GitHubRepositorySearch {
+  return {type: SearchCommandTag.GitHubRepositorySearch, data};
+}
+
+export function isSearchCommand(value: unknown): value is SearchCommand {
+  return [
+    isPersonSearch,
+    isMovieSearch,
+    isShowSearch,
+    isGitHubUserSearch,
+    isGitHubRepositorySearch,
+  ].some((typePredicate) => typePredicate(value));
+}
+
+export function isPersonSearch(value: unknown): value is PersonSearch {
+  return svt.isInterface<PersonSearch>(value, {
+    type: SearchCommandTag.PersonSearch,
+    data: isSearchEntry(tmdb.isPerson),
+  });
+}
+
+export function isMovieSearch(value: unknown): value is MovieSearch {
+  return svt.isInterface<MovieSearch>(value, {
+    type: SearchCommandTag.MovieSearch,
+    data: isSearchEntry(tmdb.isMovieData),
+  });
+}
+
+export function isShowSearch(value: unknown): value is ShowSearch {
+  return svt.isInterface<ShowSearch>(value, {
+    type: SearchCommandTag.ShowSearch,
+    data: isSearchEntry(tmdb.isShow),
+  });
+}
+
+export function isGitHubUserSearch(value: unknown): value is GitHubUserSearch {
+  return svt.isInterface<GitHubUserSearch>(value, {
+    type: SearchCommandTag.GitHubUserSearch,
+    data: isSearchEntry(github.isUserData),
+  });
+}
+
+export function isGitHubRepositorySearch(value: unknown): value is GitHubRepositorySearch {
+  return svt.isInterface<GitHubRepositorySearch>(value, {
+    type: SearchCommandTag.GitHubRepositorySearch,
+    data: isSearchEntry(github.isRepository),
+  });
+}
+
+export function validateSearchCommand(value: unknown): svt.ValidationResult<SearchCommand> {
+  return svt.validateWithTypeTag<SearchCommand>(
+    value,
+    {
+      [SearchCommandTag.PersonSearch]: validatePersonSearch,
+      [SearchCommandTag.MovieSearch]: validateMovieSearch,
+      [SearchCommandTag.ShowSearch]: validateShowSearch,
+      [SearchCommandTag.GitHubUserSearch]: validateGitHubUserSearch,
+      [SearchCommandTag.GitHubRepositorySearch]: validateGitHubRepositorySearch,
+    },
+    "type"
+  );
+}
+
+export function validatePersonSearch(value: unknown): svt.ValidationResult<PersonSearch> {
+  return svt.validate<PersonSearch>(value, {
+    type: SearchCommandTag.PersonSearch,
+    data: validateSearchEntry(tmdb.validatePerson),
+  });
+}
+
+export function validateMovieSearch(value: unknown): svt.ValidationResult<MovieSearch> {
+  return svt.validate<MovieSearch>(value, {
+    type: SearchCommandTag.MovieSearch,
+    data: validateSearchEntry(tmdb.validateMovieData),
+  });
+}
+
+export function validateShowSearch(value: unknown): svt.ValidationResult<ShowSearch> {
+  return svt.validate<ShowSearch>(value, {
+    type: SearchCommandTag.ShowSearch,
+    data: validateSearchEntry(tmdb.validateShow),
+  });
+}
+
+export function validateGitHubUserSearch(value: unknown): svt.ValidationResult<GitHubUserSearch> {
+  return svt.validate<GitHubUserSearch>(value, {
+    type: SearchCommandTag.GitHubUserSearch,
+    data: validateSearchEntry(github.validateUserData),
+  });
+}
+
+export function validateGitHubRepositorySearch(
+  value: unknown
+): svt.ValidationResult<GitHubRepositorySearch> {
+  return svt.validate<GitHubRepositorySearch>(value, {
+    type: SearchCommandTag.GitHubRepositorySearch,
+    data: validateSearchEntry(github.validateRepository),
   });
 }

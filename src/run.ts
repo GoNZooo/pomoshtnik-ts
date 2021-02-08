@@ -1,3 +1,4 @@
+import {v4 as uuidv4} from "uuid";
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
@@ -6,6 +7,7 @@ import {assertUnreachable, getSearchFailureText} from "../pomoshtnik-shared/util
 import express from "express";
 import cors from "cors";
 import {
+  BotUser,
   Command,
   CommandTag,
   DiscordError,
@@ -21,8 +23,8 @@ import {
   RepositorySearchTypeTag,
   SearchCommand,
   SearchCommandTag,
+  SearchEntry,
   SearchFailure,
-  SearchResult,
   SearchResultTag,
   SearchSuccess,
   Show,
@@ -111,10 +113,17 @@ application.delete("/searches/:mongoId", async function (request, response) {
 });
 
 application.get("/users", async function (request, response) {
-  const users = await getUsers(mongoDatabase);
+  const users = await getUsers(mongoDatabase, {});
 
   response.json(users);
 });
+
+// application.post("/users", async function (request, response) {
+//   const users = await getUsers(mongoDatabase, {});
+//
+//   response.json(users);
+// });
+//
 
 application.listen(applicationPort);
 
@@ -143,6 +152,8 @@ discordClient.on("ready", async () => {
 
 async function handleGitHubUserCommand(
   command: GitHubUser,
+  botUser: BotUser,
+  uuid: string,
   message: Discord.Message
 ): Promise<void> {
   const userResult = await getUser(command.data);
@@ -170,8 +181,18 @@ async function handleGitHubUserCommand(
       embed.addField("Website", user.blog);
     }
 
-    await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubUserSearch);
-    await addSearchCommandResult(mongoDatabase, GitHubUserSearch(SearchSuccess(userResult.value)));
+    await replyOrAddDiscordApiFailure(
+      mongoDatabase,
+      message,
+      {embed},
+      GitHubUserSearch,
+      botUser,
+      uuid
+    );
+    await addSearchCommandResult(
+      mongoDatabase,
+      GitHubUserSearch({user: botUser, uuid, result: SearchSuccess(userResult.value)})
+    );
   } else {
     const error = SearchFailure(
       ValidationError({
@@ -179,13 +200,18 @@ async function handleGitHubUserCommand(
         reason: JSON.stringify(userResult.errors, null, JSON_STRINGIFY_SPACING),
       })
     );
-    await addSearchCommandResult(mongoDatabase, GitHubUserSearch(error));
+    await addSearchCommandResult(
+      mongoDatabase,
+      GitHubUserSearch({user: botUser, uuid, result: error})
+    );
     console.error("Error fetching user:", userResult.errors);
   }
 }
 
 async function handleGitHubRepositoryCommand(
   command: GitHubRepository,
+  botUser: BotUser,
+  uuid: string,
   message: Discord.Message
 ): Promise<void> {
   switch (command.data.type) {
@@ -196,7 +222,7 @@ async function handleGitHubRepositoryCommand(
         const repository = repositoryResult.value;
         await addSearchCommandResult(
           mongoDatabase,
-          GitHubRepositorySearch(SearchSuccess(repository))
+          GitHubRepositorySearch({user: botUser, uuid, result: SearchSuccess(repository)})
         );
 
         const embed = new Discord.MessageEmbed({
@@ -209,7 +235,14 @@ async function handleGitHubRepositoryCommand(
         embed.addField("Creator", repository.owner.login);
         embed.addField("Language", repository.language);
 
-        await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubRepositorySearch);
+        await replyOrAddDiscordApiFailure(
+          mongoDatabase,
+          message,
+          {embed},
+          GitHubRepositorySearch,
+          botUser,
+          uuid
+        );
 
         return;
       } else {
@@ -219,7 +252,10 @@ async function handleGitHubRepositoryCommand(
             reason: JSON.stringify(repositoryResult.errors, null, JSON_STRINGIFY_SPACING),
           })
         );
-        await addSearchCommandResult(mongoDatabase, GitHubRepositorySearch(error));
+        await addSearchCommandResult(
+          mongoDatabase,
+          GitHubRepositorySearch({user: botUser, uuid, result: error})
+        );
         console.error(
           "Error fetching repository:",
           JSON.stringify(repositoryResult.errors, null, JSON_STRINGIFY_SPACING)
@@ -239,7 +275,14 @@ async function handleGitHubRepositoryCommand(
         const reply = lines.join("\n");
         const embed = new Discord.MessageEmbed({description: reply});
 
-        await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, GitHubRepositorySearch);
+        await replyOrAddDiscordApiFailure(
+          mongoDatabase,
+          message,
+          {embed},
+          GitHubRepositorySearch,
+          botUser,
+          uuid
+        );
 
         return;
       } else {
@@ -258,7 +301,12 @@ async function handleGitHubRepositoryCommand(
 }
 
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
-  await addUserIfUnique(mongoDatabase, message.author, command);
+  const lastSeen = new Date().toISOString();
+  const nickname = message.author.username;
+  const lastCommand = command;
+  const uuid = uuidv4();
+  const botUser = {lastSeen, lastCommand, nickname, uuid};
+  await addUserIfUnique(mongoDatabase, botUser);
   switch (command.type) {
     case CommandTag.Ping: {
       await message.reply("Pong!");
@@ -285,31 +333,31 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
     }
 
     case CommandTag.Person: {
-      await handlePersonCommand(command, message);
+      await handlePersonCommand(command, botUser, uuid, message);
 
       return;
     }
 
     case CommandTag.Movie: {
-      await handleMovieCommand(command, message);
+      await handleMovieCommand(command, botUser, uuid, message);
 
       return;
     }
 
     case CommandTag.Show: {
-      await handleShowCommand(command, message);
+      await handleShowCommand(command, botUser, uuid, message);
 
       return;
     }
 
     case CommandTag.GitHubUser: {
-      await handleGitHubUserCommand(command, message);
+      await handleGitHubUserCommand(command, botUser, uuid, message);
 
       return;
     }
 
     case CommandTag.GitHubRepository: {
-      await handleGitHubRepositoryCommand(command, message);
+      await handleGitHubRepositoryCommand(command, botUser, uuid, message);
 
       return;
     }
@@ -326,7 +374,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 };
 
 async function handleUsersCommand(_command: Command, message: Discord.Message): Promise<void> {
-  const users = await getUsers(mongoDatabase);
+  const users = await getUsers(mongoDatabase, {limit: 20, sort: ["lastSeen", "descending"]});
   const joinedUsers = users
     .map((u) => `${u.nickname} (${u.lastCommand.type}) @ ${u.lastSeen}`)
     .join("\n");
@@ -344,52 +392,52 @@ async function handleSearchesCommand(command: Command, message: Discord.Message)
       .map((searchCommand) => {
         switch (searchCommand.type) {
           case SearchCommandTag.GitHubUserSearch: {
-            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-              const user = searchCommand.data.data;
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const user = searchCommand.data.result.data;
 
               return `GitHub user found: ${user.login} (${user.url}, ${user.bio})`;
             } else {
-              return getSearchFailureText(searchCommand.data.data);
+              return getSearchFailureText(searchCommand.data.result.data);
             }
           }
 
           case SearchCommandTag.GitHubRepositorySearch: {
-            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-              const repository = searchCommand.data.data;
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const repository = searchCommand.data.result.data;
 
               return `GitHub repository found: ${repository.url} (${repository.html_url})`;
             } else {
-              return getSearchFailureText(searchCommand.data.data);
+              return getSearchFailureText(searchCommand.data.result.data);
             }
           }
 
           case SearchCommandTag.PersonSearch: {
-            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-              const person = searchCommand.data.data;
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const person = searchCommand.data.result.data;
 
               return `Person found: ${person.name} (https://imdb.com/name/${person.imdb_id})`;
             } else {
-              return getSearchFailureText(searchCommand.data.data);
+              return getSearchFailureText(searchCommand.data.result.data);
             }
           }
 
           case SearchCommandTag.MovieSearch: {
-            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-              const movie = searchCommand.data.data;
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const movie = searchCommand.data.result.data;
 
               return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
             } else {
-              return getSearchFailureText(searchCommand.data.data);
+              return getSearchFailureText(searchCommand.data.result.data);
             }
           }
 
           case SearchCommandTag.ShowSearch: {
-            if (searchCommand.data.type === SearchResultTag.SearchSuccess) {
-              const show = searchCommand.data.data;
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const show = searchCommand.data.result.data;
 
               return `Show found: ${show.name} (https://imdb.com/title/${show.id})`;
             } else {
-              return getSearchFailureText(searchCommand.data.data);
+              return getSearchFailureText(searchCommand.data.result.data);
             }
           }
 
@@ -435,7 +483,12 @@ discordClient
     console.error("Unable to log in:", error);
   });
 
-const handlePersonCommand = async (command: Person, message: Discord.Message): Promise<void> => {
+const handlePersonCommand = async (
+  command: Person,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message
+): Promise<void> => {
   const maybePeople = await tmdb.searchPerson(tmdbApiKey, command.data);
 
   switch (maybePeople.type) {
@@ -446,7 +499,10 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
         switch (maybePerson.type) {
           case "Valid": {
             const person = maybePerson.value;
-            await addSearchCommandResult(mongoDatabase, PersonSearch(SearchSuccess(person)));
+            await addSearchCommandResult(
+              mongoDatabase,
+              PersonSearch({user: botUser, uuid, result: SearchSuccess(person)})
+            );
             const posterUrl =
               personCandidate.profile_path !== null
                 ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${personCandidate.profile_path}`
@@ -473,7 +529,14 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
               embed.addField(`${releaseDate}: ${title} (${media.vote_average})`, media.overview);
             });
 
-            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, PersonSearch);
+            await replyOrAddDiscordApiFailure(
+              mongoDatabase,
+              message,
+              {embed},
+              PersonSearch,
+              botUser,
+              uuid
+            );
 
             break;
           }
@@ -487,7 +550,10 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
         }
       } else {
         const error = SearchFailure(NoResults(message.content));
-        await addSearchCommandResult(mongoDatabase, PersonSearch(error));
+        await addSearchCommandResult(
+          mongoDatabase,
+          PersonSearch({user: botUser, uuid, result: error})
+        );
 
         await message.reply(`No results returned for '${command.data}'.`);
       }
@@ -508,6 +574,8 @@ const handlePersonCommand = async (command: Person, message: Discord.Message): P
 
 export const handleMovieCommand = async (
   command: Movie,
+  botUser: BotUser,
+  uuid: string,
   message: Discord.Message
 ): Promise<void> => {
   const maybeMovies = await tmdb.searchMovie(tmdbApiKey, command.data);
@@ -527,7 +595,10 @@ export const handleMovieCommand = async (
         switch (maybeMovie.type) {
           case "Valid": {
             const movie = maybeMovie.value;
-            await addSearchCommandResult(mongoDatabase, MovieSearch(SearchSuccess(movie)));
+            await addSearchCommandResult(
+              mongoDatabase,
+              MovieSearch({user: botUser, uuid, result: SearchSuccess(movie)})
+            );
 
             const embed = new Discord.MessageEmbed({
               url: `https://imdb.com/title/${movie.imdb_id}`,
@@ -541,7 +612,14 @@ export const handleMovieCommand = async (
 
             embed.addField("Description", movie.overview);
             embed.addField("Cast", castEntries.join("\n"));
-            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, MovieSearch);
+            await replyOrAddDiscordApiFailure(
+              mongoDatabase,
+              message,
+              {embed},
+              MovieSearch,
+              botUser,
+              uuid
+            );
 
             break;
           }
@@ -557,7 +635,10 @@ export const handleMovieCommand = async (
         }
       } else {
         const error = SearchFailure(NoResults(message.content));
-        await addSearchCommandResult(mongoDatabase, MovieSearch(error));
+        await addSearchCommandResult(
+          mongoDatabase,
+          MovieSearch({user: botUser, uuid, result: error})
+        );
 
         await message.reply(`No results returned for '${command.data}'.`);
       }
@@ -576,7 +657,12 @@ export const handleMovieCommand = async (
   }
 };
 
-export const handleShowCommand = async (command: Show, message: Discord.Message): Promise<void> => {
+export const handleShowCommand = async (
+  command: Show,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message
+): Promise<void> => {
   const maybeShows = await tmdb.searchShow(tmdbApiKey, command.data);
 
   switch (maybeShows.type) {
@@ -637,8 +723,18 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
 
             embed.addField("Seasons", seasonEntries.join("\n"));
 
-            await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, ShowSearch);
-            await addSearchCommandResult(mongoDatabase, ShowSearch(SearchSuccess(show)));
+            await replyOrAddDiscordApiFailure(
+              mongoDatabase,
+              message,
+              {embed},
+              ShowSearch,
+              botUser,
+              uuid
+            );
+            await addSearchCommandResult(
+              mongoDatabase,
+              ShowSearch({user: botUser, uuid, result: SearchSuccess(show)})
+            );
 
             break;
           }
@@ -662,7 +758,10 @@ export const handleShowCommand = async (command: Show, message: Discord.Message)
         break;
       } else {
         const error = SearchFailure(NoResults(message.content));
-        await addSearchCommandResult(mongoDatabase, ShowSearch(error));
+        await addSearchCommandResult(
+          mongoDatabase,
+          ShowSearch({user: botUser, uuid, result: error})
+        );
 
         await message.reply(`No results returned for '${command.data}'.`);
       }
@@ -684,7 +783,9 @@ async function replyOrAddDiscordApiFailure<T>(
   database: Db,
   message: Discord.Message,
   reply: Reply,
-  constructor: (data: SearchResult<T>) => SearchCommand
+  constructor: (data: SearchEntry<T>) => SearchCommand,
+  user: BotUser,
+  uuid: string
 ): Promise<void> {
   const replyResult = await replyTo(message, reply);
   switch (replyResult.type) {
@@ -695,9 +796,11 @@ async function replyOrAddDiscordApiFailure<T>(
     case "ReplyFailure": {
       await addSearchCommandResult(
         mongoDatabase,
-        constructor(
-          SearchFailure(DiscordError({...replyResult.error, commandText: message.content}))
-        )
+        constructor({
+          user,
+          uuid,
+          result: SearchFailure(DiscordError({...replyResult.error, commandText: message.content})),
+        })
       );
 
       break;

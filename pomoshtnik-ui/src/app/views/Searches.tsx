@@ -28,14 +28,14 @@ function Searches({searches, dispatch, filter}: Props) {
   }, [dispatch, filter]);
 
   function getIconAndTextFromSearchCommand(command: SearchCommand): [JSX.Element, string] {
-    const color = command.data.type === SearchResultTag.SearchSuccess ? "primary" : "error";
+    const color = command.data.result.type === SearchResultTag.SearchSuccess ? "primary" : "error";
 
     switch (command.type) {
       case SearchCommandTag.GitHubUserSearch: {
         const content =
-          command.data.type === SearchResultTag.SearchSuccess
-            ? command.data.data.login
-            : getSearchFailureText(command.data.data);
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.login
+            : getSearchFailureText(command.data.result.data);
         const icon = <GitHubIcon color={color} />;
 
         return [icon, content];
@@ -43,9 +43,9 @@ function Searches({searches, dispatch, filter}: Props) {
 
       case SearchCommandTag.GitHubRepositorySearch: {
         const content =
-          command.data.type === SearchResultTag.SearchSuccess
-            ? command.data.data.full_name
-            : getSearchFailureText(command.data.data);
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.full_name
+            : getSearchFailureText(command.data.result.data);
         const icon = <GitHubIcon color={color} />;
 
         return [icon, content];
@@ -53,9 +53,9 @@ function Searches({searches, dispatch, filter}: Props) {
 
       case SearchCommandTag.MovieSearch: {
         const content =
-          command.data.type === SearchResultTag.SearchSuccess
-            ? command.data.data.title ?? "Title not available"
-            : getSearchFailureText(command.data.data);
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.title ?? "Title not available"
+            : getSearchFailureText(command.data.result.data);
         const icon = <Movie color={color} />;
 
         return [icon, content];
@@ -63,9 +63,9 @@ function Searches({searches, dispatch, filter}: Props) {
 
       case SearchCommandTag.ShowSearch: {
         const content =
-          command.data.type === SearchResultTag.SearchSuccess
-            ? command.data.data.name
-            : getSearchFailureText(command.data.data);
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.name
+            : getSearchFailureText(command.data.result.data);
         const icon = <Tv color={color} />;
 
         return [icon, content];
@@ -73,9 +73,9 @@ function Searches({searches, dispatch, filter}: Props) {
 
       case SearchCommandTag.PersonSearch: {
         const content =
-          command.data.type === SearchResultTag.SearchSuccess
-            ? command.data.data.name
-            : getSearchFailureText(command.data.data);
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.name
+            : getSearchFailureText(command.data.result.data);
         const icon = <Person color={color} />;
 
         return [icon, content];
