@@ -20,14 +20,18 @@ union ApiRequest {
 union ClientEvent {
     ExecuteApiRequest: ApiRequest
     ClearApiRequests
+    ExecuteWebSocketRequest: ApiRequest
+    ClearWebSocketRequests
     SetGetSearchesFilter: GetSearchesFilter
     ConnectToWebSocket
 }
 
 union ServerEvent {
+    ConnectedToWebSocket: String
     SearchesResult: []commands.SearchCommand
     SearchByUUIDResult: commands.SearchCommand
     UsersResult: []commands.BotUser
+    SearchAdded: commands.SearchCommand
     SearchRemoved: String
 }
 

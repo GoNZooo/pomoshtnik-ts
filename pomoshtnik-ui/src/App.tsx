@@ -25,7 +25,7 @@ function App() {
   return (
     <div className="App">
       <ApiExecutor requests={state.apiRequests} dispatch={dispatch} />
-      <SocketAdapter socket={state.socket} dispatch={dispatch} />
+      <SocketAdapter requests={state.webSocketRequests} socket={state.socket} dispatch={dispatch} />
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <View state={state} dispatch={dispatch} />

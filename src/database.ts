@@ -1,6 +1,8 @@
 import {Db, FilterQuery, MongoClient, ObjectId} from "mongodb";
 import {BotUser, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
 import {searchResult} from "../pomoshtnik-shared/utilities";
+import SocketIO from "socket.io";
+import {SearchAdded} from "../pomoshtnik-shared/gotyno/api";
 
 export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");
@@ -49,9 +51,11 @@ export async function getUsers(database: Db, options: GetUsersOptions): Promise<
 
 export async function addSearchCommandResult<T>(
   database: Db,
-  command: SearchCommand
+  command: SearchCommand,
+  socketServer: SocketIO.Server
 ): Promise<void> {
   await database.collection("searches").insertOne(command);
+  socketServer.emit("ServerEvent", SearchAdded(command));
 }
 
 export async function addUserIfUnique(database: Db, user: BotUser): Promise<void> {

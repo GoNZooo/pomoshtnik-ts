@@ -218,12 +218,16 @@ export function validateDeleteSearch(value: unknown): svt.ValidationResult<Delet
 export type ClientEvent =
   | ExecuteApiRequest
   | ClearApiRequests
+  | ExecuteWebSocketRequest
+  | ClearWebSocketRequests
   | SetGetSearchesFilter
   | ConnectToWebSocket;
 
 export enum ClientEventTag {
   ExecuteApiRequest = "ExecuteApiRequest",
   ClearApiRequests = "ClearApiRequests",
+  ExecuteWebSocketRequest = "ExecuteWebSocketRequest",
+  ClearWebSocketRequests = "ClearWebSocketRequests",
   SetGetSearchesFilter = "SetGetSearchesFilter",
   ConnectToWebSocket = "ConnectToWebSocket",
 }
@@ -235,6 +239,15 @@ export type ExecuteApiRequest = {
 
 export type ClearApiRequests = {
   type: ClientEventTag.ClearApiRequests;
+};
+
+export type ExecuteWebSocketRequest = {
+  type: ClientEventTag.ExecuteWebSocketRequest;
+  data: ApiRequest;
+};
+
+export type ClearWebSocketRequests = {
+  type: ClientEventTag.ClearWebSocketRequests;
 };
 
 export type SetGetSearchesFilter = {
@@ -254,6 +267,14 @@ export function ClearApiRequests(): ClearApiRequests {
   return {type: ClientEventTag.ClearApiRequests};
 }
 
+export function ExecuteWebSocketRequest(data: ApiRequest): ExecuteWebSocketRequest {
+  return {type: ClientEventTag.ExecuteWebSocketRequest, data};
+}
+
+export function ClearWebSocketRequests(): ClearWebSocketRequests {
+  return {type: ClientEventTag.ClearWebSocketRequests};
+}
+
 export function SetGetSearchesFilter(data: GetSearchesFilter): SetGetSearchesFilter {
   return {type: ClientEventTag.SetGetSearchesFilter, data};
 }
@@ -266,6 +287,8 @@ export function isClientEvent(value: unknown): value is ClientEvent {
   return [
     isExecuteApiRequest,
     isClearApiRequests,
+    isExecuteWebSocketRequest,
+    isClearWebSocketRequests,
     isSetGetSearchesFilter,
     isConnectToWebSocket,
   ].some((typePredicate) => typePredicate(value));
@@ -280,6 +303,19 @@ export function isExecuteApiRequest(value: unknown): value is ExecuteApiRequest 
 
 export function isClearApiRequests(value: unknown): value is ClearApiRequests {
   return svt.isInterface<ClearApiRequests>(value, {type: ClientEventTag.ClearApiRequests});
+}
+
+export function isExecuteWebSocketRequest(value: unknown): value is ExecuteWebSocketRequest {
+  return svt.isInterface<ExecuteWebSocketRequest>(value, {
+    type: ClientEventTag.ExecuteWebSocketRequest,
+    data: isApiRequest,
+  });
+}
+
+export function isClearWebSocketRequests(value: unknown): value is ClearWebSocketRequests {
+  return svt.isInterface<ClearWebSocketRequests>(value, {
+    type: ClientEventTag.ClearWebSocketRequests,
+  });
 }
 
 export function isSetGetSearchesFilter(value: unknown): value is SetGetSearchesFilter {
@@ -299,6 +335,8 @@ export function validateClientEvent(value: unknown): svt.ValidationResult<Client
     {
       [ClientEventTag.ExecuteApiRequest]: validateExecuteApiRequest,
       [ClientEventTag.ClearApiRequests]: validateClearApiRequests,
+      [ClientEventTag.ExecuteWebSocketRequest]: validateExecuteWebSocketRequest,
+      [ClientEventTag.ClearWebSocketRequests]: validateClearWebSocketRequests,
       [ClientEventTag.SetGetSearchesFilter]: validateSetGetSearchesFilter,
       [ClientEventTag.ConnectToWebSocket]: validateConnectToWebSocket,
     },
@@ -317,6 +355,21 @@ export function validateClearApiRequests(value: unknown): svt.ValidationResult<C
   return svt.validate<ClearApiRequests>(value, {type: ClientEventTag.ClearApiRequests});
 }
 
+export function validateExecuteWebSocketRequest(
+  value: unknown
+): svt.ValidationResult<ExecuteWebSocketRequest> {
+  return svt.validate<ExecuteWebSocketRequest>(value, {
+    type: ClientEventTag.ExecuteWebSocketRequest,
+    data: validateApiRequest,
+  });
+}
+
+export function validateClearWebSocketRequests(
+  value: unknown
+): svt.ValidationResult<ClearWebSocketRequests> {
+  return svt.validate<ClearWebSocketRequests>(value, {type: ClientEventTag.ClearWebSocketRequests});
+}
+
 export function validateSetGetSearchesFilter(
   value: unknown
 ): svt.ValidationResult<SetGetSearchesFilter> {
@@ -332,14 +385,27 @@ export function validateConnectToWebSocket(
   return svt.validate<ConnectToWebSocket>(value, {type: ClientEventTag.ConnectToWebSocket});
 }
 
-export type ServerEvent = SearchesResult | SearchByUUIDResult | UsersResult | SearchRemoved;
+export type ServerEvent =
+  | ConnectedToWebSocket
+  | SearchesResult
+  | SearchByUUIDResult
+  | UsersResult
+  | SearchAdded
+  | SearchRemoved;
 
 export enum ServerEventTag {
+  ConnectedToWebSocket = "ConnectedToWebSocket",
   SearchesResult = "SearchesResult",
   SearchByUUIDResult = "SearchByUUIDResult",
   UsersResult = "UsersResult",
+  SearchAdded = "SearchAdded",
   SearchRemoved = "SearchRemoved",
 }
+
+export type ConnectedToWebSocket = {
+  type: ServerEventTag.ConnectedToWebSocket;
+  data: string;
+};
 
 export type SearchesResult = {
   type: ServerEventTag.SearchesResult;
@@ -356,10 +422,19 @@ export type UsersResult = {
   data: commands.BotUser[];
 };
 
+export type SearchAdded = {
+  type: ServerEventTag.SearchAdded;
+  data: commands.SearchCommand;
+};
+
 export type SearchRemoved = {
   type: ServerEventTag.SearchRemoved;
   data: string;
 };
+
+export function ConnectedToWebSocket(data: string): ConnectedToWebSocket {
+  return {type: ServerEventTag.ConnectedToWebSocket, data};
+}
 
 export function SearchesResult(data: commands.SearchCommand[]): SearchesResult {
   return {type: ServerEventTag.SearchesResult, data};
@@ -373,17 +448,30 @@ export function UsersResult(data: commands.BotUser[]): UsersResult {
   return {type: ServerEventTag.UsersResult, data};
 }
 
+export function SearchAdded(data: commands.SearchCommand): SearchAdded {
+  return {type: ServerEventTag.SearchAdded, data};
+}
+
 export function SearchRemoved(data: string): SearchRemoved {
   return {type: ServerEventTag.SearchRemoved, data};
 }
 
 export function isServerEvent(value: unknown): value is ServerEvent {
   return [
+    isConnectedToWebSocket,
     isSearchesResult,
     isSearchByUUIDResult,
     isUsersResult,
+    isSearchAdded,
     isSearchRemoved,
   ].some((typePredicate) => typePredicate(value));
+}
+
+export function isConnectedToWebSocket(value: unknown): value is ConnectedToWebSocket {
+  return svt.isInterface<ConnectedToWebSocket>(value, {
+    type: ServerEventTag.ConnectedToWebSocket,
+    data: svt.isString,
+  });
 }
 
 export function isSearchesResult(value: unknown): value is SearchesResult {
@@ -407,6 +495,13 @@ export function isUsersResult(value: unknown): value is UsersResult {
   });
 }
 
+export function isSearchAdded(value: unknown): value is SearchAdded {
+  return svt.isInterface<SearchAdded>(value, {
+    type: ServerEventTag.SearchAdded,
+    data: commands.isSearchCommand,
+  });
+}
+
 export function isSearchRemoved(value: unknown): value is SearchRemoved {
   return svt.isInterface<SearchRemoved>(value, {
     type: ServerEventTag.SearchRemoved,
@@ -418,13 +513,24 @@ export function validateServerEvent(value: unknown): svt.ValidationResult<Server
   return svt.validateWithTypeTag<ServerEvent>(
     value,
     {
+      [ServerEventTag.ConnectedToWebSocket]: validateConnectedToWebSocket,
       [ServerEventTag.SearchesResult]: validateSearchesResult,
       [ServerEventTag.SearchByUUIDResult]: validateSearchByUUIDResult,
       [ServerEventTag.UsersResult]: validateUsersResult,
+      [ServerEventTag.SearchAdded]: validateSearchAdded,
       [ServerEventTag.SearchRemoved]: validateSearchRemoved,
     },
     "type"
   );
+}
+
+export function validateConnectedToWebSocket(
+  value: unknown
+): svt.ValidationResult<ConnectedToWebSocket> {
+  return svt.validate<ConnectedToWebSocket>(value, {
+    type: ServerEventTag.ConnectedToWebSocket,
+    data: svt.validateString,
+  });
 }
 
 export function validateSearchesResult(value: unknown): svt.ValidationResult<SearchesResult> {
@@ -447,6 +553,13 @@ export function validateUsersResult(value: unknown): svt.ValidationResult<UsersR
   return svt.validate<UsersResult>(value, {
     type: ServerEventTag.UsersResult,
     data: svt.validateArray(commands.validateBotUser),
+  });
+}
+
+export function validateSearchAdded(value: unknown): svt.ValidationResult<SearchAdded> {
+  return svt.validate<SearchAdded>(value, {
+    type: ServerEventTag.SearchAdded,
+    data: commands.validateSearchCommand,
   });
 }
 

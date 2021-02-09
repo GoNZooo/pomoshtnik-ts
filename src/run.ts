@@ -46,7 +46,16 @@ import {
   getSearchesByResultLike,
   getUsers,
 } from "./database";
-import {GetSearchesFilterTag, validateGetSearchesFilter} from "../pomoshtnik-shared/gotyno/api";
+import {
+  ApiRequestTag,
+  ConnectedToWebSocket,
+  GetSearchesFilterTag,
+  SearchesResult,
+  SearchRemoved,
+  UsersResult,
+  validateApiRequest,
+  validateGetSearchesFilter,
+} from "../pomoshtnik-shared/gotyno/api";
 
 const DEFAULT_APPLICATION_PORT = 2999;
 
@@ -109,7 +118,7 @@ application.delete("/api/searches/:mongoId", async function (request, response) 
   const mongoId = request.params.mongoId;
   const result = await deleteSearchByMongoId(mongoDatabase, mongoId);
   if (result) {
-    console.log("Deleted: ", mongoId);
+    socketServer.emit("ServerEvent", SearchRemoved(mongoId));
   }
   response.json(result);
 });
@@ -121,15 +130,50 @@ application.get("/api/users", async function (request, response) {
 });
 
 const server = createServer(application);
-const socketServer = new io.Server(server);
-socketServer.on("connection", (socket) => {
-  console.log("Someone connected:", socket.id);
-  socket.on("initializeFromReact", () => {
-    console.log("FUCK!");
-  });
+const socketServer = new io.Server(server, {});
+socketServer.on("connection", async (socket) => {
+  console.log("Connected:", socket.id);
+
   socket.on("disconnect", () => {
     console.log("disconnected:", socket.id);
   });
+
+  socket.on("ClientRequest", async (payload: unknown) => {
+    const validationResult = validateApiRequest(payload);
+    if (validationResult.type === "Valid") {
+      switch (validationResult.value.type) {
+        case ApiRequestTag.DeleteSearch: {
+          const result = await deleteSearchByMongoId(mongoDatabase, validationResult.value.data);
+          if (result) {
+            socketServer.emit("ServerEvent", SearchRemoved(validationResult.value.data));
+          }
+
+          break;
+        }
+
+        case ApiRequestTag.GetSearches: {
+          throw new Error("Not yet implemented");
+        }
+
+        case ApiRequestTag.GetUsers: {
+          throw new Error("Not yet implemented");
+        }
+
+        case ApiRequestTag.GetSearch: {
+          throw new Error("Not yet implemented");
+        }
+
+        default:
+          assertUnreachable(validationResult.value);
+      }
+    }
+  });
+
+  const searches = await getSearches(mongoDatabase);
+  const users = await getUsers(mongoDatabase, {});
+  socket.emit("ServerEvent", ConnectedToWebSocket(socket.id));
+  socket.emit("ServerEvent", SearchesResult(searches));
+  socket.emit("ServerEvent", UsersResult(users));
 });
 server.listen(applicationPort);
 
@@ -197,7 +241,8 @@ async function handleGitHubUserCommand(
     );
     await addSearchCommandResult(
       mongoDatabase,
-      GitHubUserSearch({user: botUser, uuid, result: SearchSuccess(userResult.value)})
+      GitHubUserSearch({user: botUser, uuid, result: SearchSuccess(userResult.value)}),
+      socketServer
     );
   } else {
     const error = SearchFailure(
@@ -208,7 +253,8 @@ async function handleGitHubUserCommand(
     );
     await addSearchCommandResult(
       mongoDatabase,
-      GitHubUserSearch({user: botUser, uuid, result: error})
+      GitHubUserSearch({user: botUser, uuid, result: error}),
+      socketServer
     );
     console.error("Error fetching user:", userResult.errors);
   }
@@ -228,7 +274,8 @@ async function handleGitHubRepositoryCommand(
         const repository = repositoryResult.value;
         await addSearchCommandResult(
           mongoDatabase,
-          GitHubRepositorySearch({user: botUser, uuid, result: SearchSuccess(repository)})
+          GitHubRepositorySearch({user: botUser, uuid, result: SearchSuccess(repository)}),
+          socketServer
         );
 
         const embed = new Discord.MessageEmbed({
@@ -260,7 +307,8 @@ async function handleGitHubRepositoryCommand(
         );
         await addSearchCommandResult(
           mongoDatabase,
-          GitHubRepositorySearch({user: botUser, uuid, result: error})
+          GitHubRepositorySearch({user: botUser, uuid, result: error}),
+          socketServer
         );
         console.error(
           "Error fetching repository:",
@@ -507,7 +555,8 @@ const handlePersonCommand = async (
             const person = maybePerson.value;
             await addSearchCommandResult(
               mongoDatabase,
-              PersonSearch({user: botUser, uuid, result: SearchSuccess(person)})
+              PersonSearch({user: botUser, uuid, result: SearchSuccess(person)}),
+              socketServer
             );
             const posterUrl =
               personCandidate.profile_path !== null
@@ -558,7 +607,8 @@ const handlePersonCommand = async (
         const error = SearchFailure(NoResults(message.content));
         await addSearchCommandResult(
           mongoDatabase,
-          PersonSearch({user: botUser, uuid, result: error})
+          PersonSearch({user: botUser, uuid, result: error}),
+          socketServer
         );
 
         await message.reply(`No results returned for '${command.data}'.`);
@@ -603,7 +653,8 @@ export const handleMovieCommand = async (
             const movie = maybeMovie.value;
             await addSearchCommandResult(
               mongoDatabase,
-              MovieSearch({user: botUser, uuid, result: SearchSuccess(movie)})
+              MovieSearch({user: botUser, uuid, result: SearchSuccess(movie)}),
+              socketServer
             );
 
             const embed = new Discord.MessageEmbed({
@@ -643,7 +694,8 @@ export const handleMovieCommand = async (
         const error = SearchFailure(NoResults(message.content));
         await addSearchCommandResult(
           mongoDatabase,
-          MovieSearch({user: botUser, uuid, result: error})
+          MovieSearch({user: botUser, uuid, result: error}),
+          socketServer
         );
 
         await message.reply(`No results returned for '${command.data}'.`);
@@ -739,7 +791,8 @@ export const handleShowCommand = async (
             );
             await addSearchCommandResult(
               mongoDatabase,
-              ShowSearch({user: botUser, uuid, result: SearchSuccess(show)})
+              ShowSearch({user: botUser, uuid, result: SearchSuccess(show)}),
+              socketServer
             );
 
             break;
@@ -766,7 +819,8 @@ export const handleShowCommand = async (
         const error = SearchFailure(NoResults(message.content));
         await addSearchCommandResult(
           mongoDatabase,
-          ShowSearch({user: botUser, uuid, result: error})
+          ShowSearch({user: botUser, uuid, result: error}),
+          socketServer
         );
 
         await message.reply(`No results returned for '${command.data}'.`);
@@ -806,7 +860,8 @@ async function replyOrAddDiscordApiFailure<T>(
           user,
           uuid,
           result: SearchFailure(DiscordError({...replyResult.error, commandText: message.content})),
-        })
+        }),
+        socketServer
       );
 
       break;

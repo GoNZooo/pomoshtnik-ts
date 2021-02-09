@@ -6,8 +6,7 @@ import {
   ApplicationEvent,
   DeleteSearch,
   EventFromClient,
-  ExecuteApiRequest,
-  GetSearches,
+  ExecuteWebSocketRequest,
   GetSearchesFilter,
   GetSearchesFilterTag,
   NoSearchesFilter,
@@ -23,10 +22,6 @@ export type Props = {
 };
 
 function Searches({searches, dispatch, filter}: Props) {
-  React.useEffect(() => {
-    dispatch(EventFromClient(ExecuteApiRequest(GetSearches(NoSearchesFilter()))));
-  }, [dispatch, filter]);
-
   function getIconAndTextFromSearchCommand(command: SearchCommand): [JSX.Element, string] {
     const color = command.data.result.type === SearchResultTag.SearchSuccess ? "primary" : "error";
 
@@ -89,7 +84,7 @@ function Searches({searches, dispatch, filter}: Props) {
   const searchResults = searches.map((s) => {
     function handleDeleteSearch({_id}: {_id: string}): (e: React.MouseEvent) => void {
       return function () {
-        dispatch(EventFromClient(ExecuteApiRequest(DeleteSearch(_id))));
+        dispatch(EventFromClient(ExecuteWebSocketRequest(DeleteSearch(_id))));
       };
     }
 

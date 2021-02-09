@@ -19,18 +19,23 @@ export type State = {
   searches: SearchCommand[];
   filteredSearches: SearchCommand[];
   apiRequests: ApiRequest[];
+  webSocketRequests: ApiRequest[];
   getSearchesFilter: GetSearchesFilter;
   socket: SocketIOClient.Socket;
 };
 
 export function initialState(): State {
-  const socket = SocketIO(`ws://${window.location.host}`, {autoConnect: false});
+  const socket = SocketIO(`ws://${window.location.host}`, {
+    autoConnect: false,
+    upgrade: true,
+  });
 
   return {
     users: [],
     searches: [],
     filteredSearches: [],
     apiRequests: [],
+    webSocketRequests: [],
     getSearchesFilter: NoSearchesFilter(),
     socket,
   };
@@ -61,6 +66,14 @@ function handleClientEvent(state: State, event: ClientEvent): State {
       return {...state, apiRequests: []};
     }
 
+    case ClientEventTag.ExecuteWebSocketRequest: {
+      return {...state, webSocketRequests: [...state.webSocketRequests, event.data]};
+    }
+
+    case ClientEventTag.ClearWebSocketRequests: {
+      return {...state, webSocketRequests: []};
+    }
+
     case ClientEventTag.SetGetSearchesFilter: {
       return {...state, getSearchesFilter: event.data};
     }
@@ -80,6 +93,10 @@ function handleClientEvent(state: State, event: ClientEvent): State {
 
 function handleServerEvent(state: State, event: ServerEvent): State {
   switch (event.type) {
+    case ServerEventTag.ConnectedToWebSocket: {
+      return state;
+    }
+
     case ServerEventTag.SearchesResult: {
       return {
         ...state,
@@ -94,6 +111,14 @@ function handleServerEvent(state: State, event: ServerEvent): State {
 
     case ServerEventTag.UsersResult: {
       return {...state, users: event.data};
+    }
+
+    case ServerEventTag.SearchAdded: {
+      const command = event.data;
+      const searches = [command, ...state.searches];
+      const filteredSearches = applyGetSearchesFilter(state.getSearchesFilter, searches);
+
+      return {...state, searches, filteredSearches};
     }
 
     case ServerEventTag.SearchRemoved: {
