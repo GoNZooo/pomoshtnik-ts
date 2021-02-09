@@ -34,7 +34,7 @@ function View({state, dispatch}: Props) {
 
           <Route path="/searches">
             <Searches
-              searches={state.searches}
+              searches={state.filteredSearches}
               dispatch={dispatch}
               filter={state.getSearchesFilter}
             />

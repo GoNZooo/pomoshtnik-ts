@@ -24,7 +24,7 @@ export type Props = {
 
 function Searches({searches, dispatch, filter}: Props) {
   React.useEffect(() => {
-    dispatch(EventFromClient(ExecuteApiRequest(GetSearches(filter))));
+    dispatch(EventFromClient(ExecuteApiRequest(GetSearches(NoSearchesFilter()))));
   }, [dispatch, filter]);
 
   function getIconAndTextFromSearchCommand(command: SearchCommand): [JSX.Element, string] {
