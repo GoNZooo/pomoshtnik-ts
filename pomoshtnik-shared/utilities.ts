@@ -1,4 +1,4 @@
-import {CommandError, CommandErrorTag} from "./gotyno/commands";
+import {CommandError, CommandErrorTag, SearchCommand, SearchCommandTag} from "./gotyno/commands";
 
 export const assertUnreachable = (value: never): never => {
   throw new Error(`Reached unreachable code: ${value}`);
@@ -30,4 +30,33 @@ export function getSearchFailureText(failure: CommandError): string {
 
 export function hasMongoId<T>(value: unknown): value is T & {_id: string} {
   return typeof value === "object" && value !== null && "_id" in value;
+}
+
+export function searchResult(command: SearchCommand): string {
+  switch (command.type) {
+    case SearchCommandTag.ShowSearch: {
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
+    }
+
+    case SearchCommandTag.MovieSearch: {
+      return command.data.result.type === "SearchSuccess"
+        ? command.data.result.data.title ?? ""
+        : "";
+    }
+
+    case SearchCommandTag.PersonSearch: {
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
+    }
+
+    case SearchCommandTag.GitHubRepositorySearch: {
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.full_name : "";
+    }
+
+    case SearchCommandTag.GitHubUserSearch: {
+      return command.data.result.type === "SearchSuccess" ? command.data.result.data.login : "";
+    }
+
+    default:
+      return assertUnreachable(command);
+  }
 }

@@ -1,6 +1,6 @@
 import {Db, FilterQuery, MongoClient, ObjectId} from "mongodb";
-import {BotUser, SearchCommand, SearchCommandTag} from "../pomoshtnik-shared/gotyno/commands";
-import {assertUnreachable} from "../pomoshtnik-shared/utilities";
+import {BotUser, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
+import {searchResult} from "../pomoshtnik-shared/utilities";
 
 export function connectToDatabase(client: MongoClient): Db {
   return client.db("pomoshtnik");
@@ -23,35 +23,6 @@ export async function getSearchesByResultLike(
     .toArray();
 
   return results.filter((c: SearchCommand) => searchResult(c).match(like));
-}
-
-function searchResult(command: SearchCommand): string {
-  switch (command.type) {
-    case SearchCommandTag.ShowSearch: {
-      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
-    }
-
-    case SearchCommandTag.MovieSearch: {
-      return command.data.result.type === "SearchSuccess"
-        ? command.data.result.data.title ?? ""
-        : "";
-    }
-
-    case SearchCommandTag.PersonSearch: {
-      return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
-    }
-
-    case SearchCommandTag.GitHubRepositorySearch: {
-      return command.data.result.type === "SearchSuccess" ? command.data.result.data.full_name : "";
-    }
-
-    case SearchCommandTag.GitHubUserSearch: {
-      return command.data.result.type === "SearchSuccess" ? command.data.result.data.login : "";
-    }
-
-    default:
-      return assertUnreachable(command);
-  }
 }
 
 export type GetUsersOptions = {
