@@ -1,5 +1,5 @@
 import * as React from "react";
-// import "./App.css";
+import "./App.css";
 import {reduce, initialState} from "./app/state";
 import View from "./app/View";
 import ApiExecutor from "./app/service-components/ApiExecutor";
