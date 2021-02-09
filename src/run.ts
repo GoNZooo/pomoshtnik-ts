@@ -460,7 +460,7 @@ async function handleSearchesCommand(command: Command, message: Discord.Message)
 }
 
 discordClient.on("message", async (message) => {
-  if (!message.author.bot) {
+  if (message.content.startsWith("!") && !message.author.bot) {
     const decodedCommand = commands.commandFromStrings(message.content.split(" "));
 
     switch (decodedCommand.type) {
