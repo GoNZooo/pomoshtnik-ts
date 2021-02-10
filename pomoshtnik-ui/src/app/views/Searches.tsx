@@ -70,7 +70,7 @@ function Searches({searches, dispatch, filter}: Props) {
         const content =
           command.data.result.type === SearchResultTag.SearchSuccess
             ? maybeTruncated(
-                command.data.result.data.map((c) => c.title ?? "N/A").join(" ,"),
+                command.data.result.data.map((c) => c.title ?? "N/A").join(", "),
                 MAX_CANDIDATE_LENGTH
               ) ?? "Title not available"
             : getSearchFailureText(command.data.result.data);
