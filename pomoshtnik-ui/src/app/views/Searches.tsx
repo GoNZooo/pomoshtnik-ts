@@ -56,6 +56,29 @@ function Searches({searches, dispatch, filter}: Props) {
         return [icon, content];
       }
 
+      case SearchCommandTag.MovieSearchById: {
+        const content =
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? command.data.result.data.title ?? "Title not available"
+            : getSearchFailureText(command.data.result.data);
+        const icon = <Movie color={color} />;
+
+        return [icon, content];
+      }
+
+      case SearchCommandTag.MovieCandidatesSearch: {
+        const content =
+          command.data.result.type === SearchResultTag.SearchSuccess
+            ? maybeTruncated(
+                command.data.result.data.map((c) => c.title ?? "N/A").join(" ,"),
+                MAX_CANDIDATE_LENGTH
+              ) ?? "Title not available"
+            : getSearchFailureText(command.data.result.data);
+        const icon = <Movie color={color} />;
+
+        return [icon, content];
+      }
+
       case SearchCommandTag.ShowSearch: {
         const content =
           command.data.result.type === SearchResultTag.SearchSuccess
@@ -144,4 +167,10 @@ function searchFilterAsText(filter: GetSearchesFilter): string {
     default:
       return assertUnreachable(filter);
   }
+}
+
+const MAX_CANDIDATE_LENGTH = 30;
+
+function maybeTruncated(s: string, maxLength: number): string {
+  return s.length > maxLength ? s.substr(0, maxLength) + "..." : s;
 }

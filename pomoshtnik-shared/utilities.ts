@@ -38,7 +38,8 @@ export function searchResult(command: SearchCommand): string {
       return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
     }
 
-    case SearchCommandTag.MovieSearch: {
+    case SearchCommandTag.MovieSearch:
+    case SearchCommandTag.MovieSearchById: {
       return command.data.result.type === "SearchSuccess"
         ? command.data.result.data.title ?? ""
         : "";

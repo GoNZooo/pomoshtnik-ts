@@ -3,6 +3,7 @@ import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
 import * as commands from "./commands";
+import * as svt from "simple-validation-tools";
 import {assertUnreachable, getSearchFailureText} from "../pomoshtnik-shared/utilities";
 import express from "express";
 import {createServer} from "http";
@@ -18,6 +19,7 @@ import {
   GitHubUser,
   GitHubUserSearch,
   Movie,
+  MovieById,
   MovieCandidates,
   MovieCandidatesSearch,
   MovieSearch,
@@ -36,7 +38,7 @@ import {
   ValidationError,
 } from "../pomoshtnik-shared/gotyno/commands";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
-import {CastEntry} from "../pomoshtnik-shared/gotyno/tmdb";
+import {CastEntry, MovieData} from "../pomoshtnik-shared/gotyno/tmdb";
 import {Db, MongoClient} from "mongodb";
 import {Reply, replyTo} from "./discord";
 import {
@@ -364,7 +366,7 @@ async function handleMovieCandidatesCommand(
 ): Promise<void> {
   const maybeCandidates = await tmdb.getMovieCandidates(tmdbApiKey, command.data);
   if (maybeCandidates.type === "Valid") {
-    const joinedCandidates = maybeCandidates.value.map((c) => c.title).join("\n");
+    const joinedCandidates = maybeCandidates.value.map((c) => `${c.title} (${c.id})`).join("\n");
 
     const embed = new Discord.MessageEmbed();
     embed.addField("Candidates", joinedCandidates);
@@ -429,6 +431,12 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Movie: {
       await handleMovieCommand(command, botUser, uuid, message);
+
+      return;
+    }
+
+    case CommandTag.MovieById: {
+      await handleMovieByIdCommand(command, botUser, uuid, message);
 
       return;
     }
@@ -521,6 +529,16 @@ async function handleSearchesCommand(command: Command, message: Discord.Message)
               const movie = searchCommand.data.result.data;
 
               return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.result.data);
+            }
+          }
+
+          case SearchCommandTag.MovieSearchById: {
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const movie = searchCommand.data.result.data;
+
+              return `Movie found by ID: ${movie.title} (https://imdb.com/title/${movie.id})`;
             } else {
               return getSearchFailureText(searchCommand.data.result.data);
             }
@@ -679,6 +697,17 @@ const handlePersonCommand = async (
   }
 };
 
+export const handleMovieByIdCommand = async (
+  command: MovieById,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message
+): Promise<void> => {
+  const maybeMovie = await tmdb.getMovie(tmdbApiKey, command.data);
+
+  await replyWithMovie(maybeMovie, botUser, uuid, message);
+};
+
 export const handleMovieCommand = async (
   command: Movie,
   botUser: BotUser,
@@ -692,55 +721,9 @@ export const handleMovieCommand = async (
       if (maybeMovies.value.length > 0) {
         const movieCandidate = maybeMovies.value[0];
 
-        const posterUrl =
-          movieCandidate.poster_path !== null
-            ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${movieCandidate.poster_path}`
-            : "";
-
         const maybeMovie = await tmdb.getMovie(tmdbApiKey, movieCandidate.id);
 
-        switch (maybeMovie.type) {
-          case "Valid": {
-            const movie = maybeMovie.value;
-            await addSearchCommandResult(
-              mongoDatabase,
-              MovieSearch({user: botUser, uuid, result: SearchSuccess(movie)}),
-              socketServer
-            );
-
-            const embed = new Discord.MessageEmbed({
-              url: `https://imdb.com/title/${movie.imdb_id}`,
-              title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
-              image: {url: posterUrl},
-            });
-
-            const castEntries = (movie.credits.cast ?? [])
-              .slice(0, MAX_EMBED_CAST_ENTRIES)
-              .map((castEntry: CastEntry) => `**${castEntry.name}** as ${castEntry.character}`);
-
-            embed.addField("Description", movie.overview);
-            embed.addField("Cast", castEntries.join("\n"));
-            await replyOrAddDiscordApiFailure(
-              mongoDatabase,
-              message,
-              {embed},
-              MovieSearch,
-              botUser,
-              uuid
-            );
-
-            break;
-          }
-
-          case "Invalid": {
-            console.error(maybeMovie.errors);
-
-            break;
-          }
-
-          default:
-            assertUnreachable(maybeMovie);
-        }
+        await replyWithMovie(maybeMovie, botUser, uuid, message);
       } else {
         const error = SearchFailure(NoResults(message.content));
         await addSearchCommandResult(
@@ -765,6 +748,61 @@ export const handleMovieCommand = async (
       assertUnreachable(maybeMovies);
   }
 };
+
+async function replyWithMovie(
+  maybeMovie: svt.ValidationResult<MovieData>,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message
+): Promise<void> {
+  switch (maybeMovie.type) {
+    case "Valid": {
+      const movie = maybeMovie.value;
+      await addSearchCommandResult(
+        mongoDatabase,
+        MovieSearch({user: botUser, uuid, result: SearchSuccess(movie)}),
+        socketServer
+      );
+
+      const posterUrl =
+        movie.poster_path !== null
+          ? `${tmdbImageBaseUrl}${tmdb.preferredProfileSize}${movie.poster_path}`
+          : "";
+
+      const embed = new Discord.MessageEmbed({
+        url: `https://imdb.com/title/${movie.imdb_id}`,
+        title: `${movie.title} (${movie.vote_average}, ${movie.release_date})`,
+        image: {url: posterUrl},
+      });
+
+      const castEntries = (movie.credits.cast ?? [])
+        .slice(0, MAX_EMBED_CAST_ENTRIES)
+        .map((castEntry: CastEntry) => `**${castEntry.name}** as ${castEntry.character}`);
+
+      embed.addField("Description", movie.overview);
+      embed.addField("Cast", castEntries.join("\n"));
+      await replyOrAddDiscordApiFailure(
+        mongoDatabase,
+        message,
+        {embed},
+        MovieSearch,
+        botUser,
+        uuid
+      );
+
+      break;
+    }
+
+    case "Invalid": {
+      console.error(maybeMovie.errors);
+
+      break;
+    }
+
+    default:
+      assertUnreachable(maybeMovie);
+  }
+}
 
 export const handleShowCommand = async (
   command: Show,
