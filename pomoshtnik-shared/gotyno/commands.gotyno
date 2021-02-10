@@ -12,6 +12,7 @@ union Command {
     Searches
     Users
     Movie: String
+    MovieCandidates: String
     Person: String
     Show: String
     GitHubUser: String
@@ -60,6 +61,7 @@ struct SearchEntry <T>{
 union SearchCommand {
     PersonSearch: SearchEntry<tmdb.Person>
     MovieSearch: SearchEntry<tmdb.MovieData>
+    MovieCandidatesSearch: SearchEntry<[]tmdb.MovieCandidate>
     ShowSearch: SearchEntry<tmdb.Show>
     GitHubUserSearch: SearchEntry<github.UserData>
     GitHubRepositorySearch: SearchEntry<github.Repository>

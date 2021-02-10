@@ -44,6 +44,12 @@ export function searchResult(command: SearchCommand): string {
         : "";
     }
 
+    case SearchCommandTag.MovieCandidatesSearch: {
+      return command.data.result.type === "SearchSuccess"
+        ? command.data.result.data.map((m) => m.title).join(", ")
+        : "";
+    }
+
     case SearchCommandTag.PersonSearch: {
       return command.data.result.type === "SearchSuccess" ? command.data.result.data.name : "";
     }

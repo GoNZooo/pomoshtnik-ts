@@ -82,6 +82,7 @@ export type Command =
   | Searches
   | Users
   | Movie
+  | MovieCandidates
   | Person
   | Show
   | GitHubUser
@@ -93,6 +94,7 @@ export enum CommandTag {
   Searches = "Searches",
   Users = "Users",
   Movie = "Movie",
+  MovieCandidates = "MovieCandidates",
   Person = "Person",
   Show = "Show",
   GitHubUser = "GitHubUser",
@@ -117,6 +119,11 @@ export type Users = {
 
 export type Movie = {
   type: CommandTag.Movie;
+  data: string;
+};
+
+export type MovieCandidates = {
+  type: CommandTag.MovieCandidates;
   data: string;
 };
 
@@ -160,6 +167,10 @@ export function Movie(data: string): Movie {
   return {type: CommandTag.Movie, data};
 }
 
+export function MovieCandidates(data: string): MovieCandidates {
+  return {type: CommandTag.MovieCandidates, data};
+}
+
 export function Person(data: string): Person {
   return {type: CommandTag.Person, data};
 }
@@ -183,6 +194,7 @@ export function isCommand(value: unknown): value is Command {
     isSearches,
     isUsers,
     isMovie,
+    isMovieCandidates,
     isPerson,
     isShow,
     isGitHubUser,
@@ -208,6 +220,13 @@ export function isUsers(value: unknown): value is Users {
 
 export function isMovie(value: unknown): value is Movie {
   return svt.isInterface<Movie>(value, {type: CommandTag.Movie, data: svt.isString});
+}
+
+export function isMovieCandidates(value: unknown): value is MovieCandidates {
+  return svt.isInterface<MovieCandidates>(value, {
+    type: CommandTag.MovieCandidates,
+    data: svt.isString,
+  });
 }
 
 export function isPerson(value: unknown): value is Person {
@@ -238,6 +257,7 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.Searches]: validateSearches,
       [CommandTag.Users]: validateUsers,
       [CommandTag.Movie]: validateMovie,
+      [CommandTag.MovieCandidates]: validateMovieCandidates,
       [CommandTag.Person]: validatePerson,
       [CommandTag.Show]: validateShow,
       [CommandTag.GitHubUser]: validateGitHubUser,
@@ -265,6 +285,13 @@ export function validateUsers(value: unknown): svt.ValidationResult<Users> {
 
 export function validateMovie(value: unknown): svt.ValidationResult<Movie> {
   return svt.validate<Movie>(value, {type: CommandTag.Movie, data: svt.validateString});
+}
+
+export function validateMovieCandidates(value: unknown): svt.ValidationResult<MovieCandidates> {
+  return svt.validate<MovieCandidates>(value, {
+    type: CommandTag.MovieCandidates,
+    data: svt.validateString,
+  });
 }
 
 export function validatePerson(value: unknown): svt.ValidationResult<Person> {
@@ -567,6 +594,7 @@ export function validateSearchEntry<T>(validateT: svt.Validator<T>): svt.Validat
 export type SearchCommand =
   | PersonSearch
   | MovieSearch
+  | MovieCandidatesSearch
   | ShowSearch
   | GitHubUserSearch
   | GitHubRepositorySearch;
@@ -574,6 +602,7 @@ export type SearchCommand =
 export enum SearchCommandTag {
   PersonSearch = "PersonSearch",
   MovieSearch = "MovieSearch",
+  MovieCandidatesSearch = "MovieCandidatesSearch",
   ShowSearch = "ShowSearch",
   GitHubUserSearch = "GitHubUserSearch",
   GitHubRepositorySearch = "GitHubRepositorySearch",
@@ -587,6 +616,11 @@ export type PersonSearch = {
 export type MovieSearch = {
   type: SearchCommandTag.MovieSearch;
   data: SearchEntry<tmdb.MovieData>;
+};
+
+export type MovieCandidatesSearch = {
+  type: SearchCommandTag.MovieCandidatesSearch;
+  data: SearchEntry<tmdb.MovieCandidate[]>;
 };
 
 export type ShowSearch = {
@@ -612,6 +646,12 @@ export function MovieSearch(data: SearchEntry<tmdb.MovieData>): MovieSearch {
   return {type: SearchCommandTag.MovieSearch, data};
 }
 
+export function MovieCandidatesSearch(
+  data: SearchEntry<tmdb.MovieCandidate[]>
+): MovieCandidatesSearch {
+  return {type: SearchCommandTag.MovieCandidatesSearch, data};
+}
+
 export function ShowSearch(data: SearchEntry<tmdb.Show>): ShowSearch {
   return {type: SearchCommandTag.ShowSearch, data};
 }
@@ -630,6 +670,7 @@ export function isSearchCommand(value: unknown): value is SearchCommand {
   return [
     isPersonSearch,
     isMovieSearch,
+    isMovieCandidatesSearch,
     isShowSearch,
     isGitHubUserSearch,
     isGitHubRepositorySearch,
@@ -647,6 +688,13 @@ export function isMovieSearch(value: unknown): value is MovieSearch {
   return svt.isInterface<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
     data: isSearchEntry(tmdb.isMovieData),
+  });
+}
+
+export function isMovieCandidatesSearch(value: unknown): value is MovieCandidatesSearch {
+  return svt.isInterface<MovieCandidatesSearch>(value, {
+    type: SearchCommandTag.MovieCandidatesSearch,
+    data: isSearchEntry(svt.arrayOf(tmdb.isMovieCandidate)),
   });
 }
 
@@ -677,6 +725,7 @@ export function validateSearchCommand(value: unknown): svt.ValidationResult<Sear
     {
       [SearchCommandTag.PersonSearch]: validatePersonSearch,
       [SearchCommandTag.MovieSearch]: validateMovieSearch,
+      [SearchCommandTag.MovieCandidatesSearch]: validateMovieCandidatesSearch,
       [SearchCommandTag.ShowSearch]: validateShowSearch,
       [SearchCommandTag.GitHubUserSearch]: validateGitHubUserSearch,
       [SearchCommandTag.GitHubRepositorySearch]: validateGitHubRepositorySearch,
@@ -696,6 +745,15 @@ export function validateMovieSearch(value: unknown): svt.ValidationResult<MovieS
   return svt.validate<MovieSearch>(value, {
     type: SearchCommandTag.MovieSearch,
     data: validateSearchEntry(tmdb.validateMovieData),
+  });
+}
+
+export function validateMovieCandidatesSearch(
+  value: unknown
+): svt.ValidationResult<MovieCandidatesSearch> {
+  return svt.validate<MovieCandidatesSearch>(value, {
+    type: SearchCommandTag.MovieCandidatesSearch,
+    data: validateSearchEntry(svt.validateArray(tmdb.validateMovieCandidate)),
   });
 }
 

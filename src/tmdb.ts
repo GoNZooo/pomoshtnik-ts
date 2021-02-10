@@ -114,6 +114,21 @@ export const getMovie = async (
   return validateMovieData(json);
 };
 
+export const getMovieCandidates = async (
+  apiKey: string,
+  name: string
+): Promise<svt.ValidationResult<MovieCandidate[]>> => {
+  const result = await fetch(
+    `${apiUrl}search/movie?query=${name}&language=en-US&page=1&api_key=${apiKey}`
+  );
+  const json = await result.json();
+  const searchResultValidation = validateMovieSearchResult(json);
+
+  return searchResultValidation.type === "Valid"
+    ? {type: "Valid", value: searchResultValidation.value.results}
+    : searchResultValidation;
+};
+
 export const getShow = async (apiKey: string, id: number): Promise<svt.ValidationResult<Show>> => {
   const result = await fetch(
     `${apiUrl}tv/${id}?language=en-US&append_to_response=credits,external_ids&api_key=${apiKey}`

@@ -18,6 +18,8 @@ import {
   GitHubUser,
   GitHubUserSearch,
   Movie,
+  MovieCandidates,
+  MovieCandidatesSearch,
   MovieSearch,
   NoResults,
   Person,
@@ -354,6 +356,39 @@ async function handleGitHubRepositoryCommand(
   }
 }
 
+async function handleMovieCandidatesCommand(
+  command: MovieCandidates,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message
+): Promise<void> {
+  const maybeCandidates = await tmdb.getMovieCandidates(tmdbApiKey, command.data);
+  if (maybeCandidates.type === "Valid") {
+    const joinedCandidates = maybeCandidates.value.map((c) => c.title).join("\n");
+
+    const embed = new Discord.MessageEmbed();
+    embed.addField("Candidates", joinedCandidates);
+    await replyOrAddDiscordApiFailure(mongoDatabase, message, {embed}, MovieSearch, botUser, uuid);
+    await addSearchCommandResult(
+      mongoDatabase,
+      MovieCandidatesSearch({user: botUser, uuid, result: SearchSuccess(maybeCandidates.value)}),
+      socketServer
+    );
+  } else {
+    const error = SearchFailure(
+      ValidationError({
+        commandText: message.content,
+        reason: JSON.stringify(maybeCandidates.errors),
+      })
+    );
+    await addSearchCommandResult(
+      mongoDatabase,
+      MovieCandidatesSearch({user: botUser, uuid, result: error}),
+      socketServer
+    );
+  }
+}
+
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   const lastSeen = new Date().toISOString();
   const nickname = message.author.username;
@@ -394,6 +429,12 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Movie: {
       await handleMovieCommand(command, botUser, uuid, message);
+
+      return;
+    }
+
+    case CommandTag.MovieCandidates: {
+      await handleMovieCandidatesCommand(command, botUser, uuid, message);
 
       return;
     }
@@ -480,6 +521,16 @@ async function handleSearchesCommand(command: Command, message: Discord.Message)
               const movie = searchCommand.data.result.data;
 
               return `Movie found: ${movie.title} (https://imdb.com/title/${movie.id})`;
+            } else {
+              return getSearchFailureText(searchCommand.data.result.data);
+            }
+          }
+
+          case SearchCommandTag.MovieCandidatesSearch: {
+            if (searchCommand.data.result.type === SearchResultTag.SearchSuccess) {
+              const movies = searchCommand.data.result.data;
+
+              return `Movies found: ${movies.map((m) => m.title).join(", ")}`;
             } else {
               return getSearchFailureText(searchCommand.data.result.data);
             }

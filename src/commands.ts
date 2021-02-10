@@ -15,6 +15,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!whoareyou": CommandTag.WhoAreYou,
     "!searches": CommandTag.Searches,
     "!movie": CommandTag.Movie,
+    "!movie-candidates": CommandTag.MovieCandidates,
     "!person": CommandTag.Person,
     "!show": CommandTag.Show,
     "!github-user": CommandTag.GitHubUser,
