@@ -84,5 +84,36 @@ export async function addNote(database: Db, note: Note): Promise<HasMongoId<Note
   }
 }
 
+export async function removeNote(database: Db, uuid: string): Promise<boolean> {
+  const result = await database.collection("notes").deleteOne({uuid});
+
+  return result.deletedCount === 1;
+}
+
+export async function updateNote(
+  database: Db,
+  uuid: string,
+  title: string,
+  body: string,
+  nowTimestamp: string
+): Promise<boolean> {
+  const result = await database
+    .collection("notes")
+    .updateOne({uuid}, {$set: {title, body, updated: nowTimestamp}});
+
+  return result.modifiedCount === 1;
+}
+
+export async function searchNote(database: Db, nickname: string, query: string): Promise<Note[]> {
+  const queryAsRegex = new RegExp(query);
+
+  return await database
+    .collection("notes")
+    .find({
+      $and: [{"user.nickname": nickname}, {$or: [{title: queryAsRegex}, {body: queryAsRegex}]}],
+    })
+    .toArray();
+}
+
 const DESCENDING_ORDER = -1;
 const ASCENDING_ORDER = 1;

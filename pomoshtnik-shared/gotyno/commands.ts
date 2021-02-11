@@ -89,6 +89,28 @@ export function validateAddNoteData(value: unknown): svt.ValidationResult<AddNot
   return svt.validate<AddNoteData>(value, {title: svt.validateString, body: svt.validateString});
 }
 
+export type UpdateNoteData = {
+  uuid: string;
+  title: string;
+  body: string;
+};
+
+export function isUpdateNoteData(value: unknown): value is UpdateNoteData {
+  return svt.isInterface<UpdateNoteData>(value, {
+    uuid: svt.isString,
+    title: svt.isString,
+    body: svt.isString,
+  });
+}
+
+export function validateUpdateNoteData(value: unknown): svt.ValidationResult<UpdateNoteData> {
+  return svt.validate<UpdateNoteData>(value, {
+    uuid: svt.validateString,
+    title: svt.validateString,
+    body: svt.validateString,
+  });
+}
+
 export type Command =
   | Ping
   | WhoAreYou
@@ -101,7 +123,10 @@ export type Command =
   | Show
   | GitHubUser
   | GitHubRepository
-  | AddNote;
+  | AddNote
+  | RemoveNote
+  | SearchNote
+  | UpdateNote;
 
 export enum CommandTag {
   Ping = "Ping",
@@ -116,6 +141,9 @@ export enum CommandTag {
   GitHubUser = "GitHubUser",
   GitHubRepository = "GitHubRepository",
   AddNote = "AddNote",
+  RemoveNote = "RemoveNote",
+  SearchNote = "SearchNote",
+  UpdateNote = "UpdateNote",
 }
 
 export type Ping = {
@@ -174,6 +202,21 @@ export type AddNote = {
   data: AddNoteData;
 };
 
+export type RemoveNote = {
+  type: CommandTag.RemoveNote;
+  data: string;
+};
+
+export type SearchNote = {
+  type: CommandTag.SearchNote;
+  data: string;
+};
+
+export type UpdateNote = {
+  type: CommandTag.UpdateNote;
+  data: UpdateNoteData;
+};
+
 export function Ping(): Ping {
   return {type: CommandTag.Ping};
 }
@@ -222,6 +265,18 @@ export function AddNote(data: AddNoteData): AddNote {
   return {type: CommandTag.AddNote, data};
 }
 
+export function RemoveNote(data: string): RemoveNote {
+  return {type: CommandTag.RemoveNote, data};
+}
+
+export function SearchNote(data: string): SearchNote {
+  return {type: CommandTag.SearchNote, data};
+}
+
+export function UpdateNote(data: UpdateNoteData): UpdateNote {
+  return {type: CommandTag.UpdateNote, data};
+}
+
 export function isCommand(value: unknown): value is Command {
   return [
     isPing,
@@ -236,6 +291,9 @@ export function isCommand(value: unknown): value is Command {
     isGitHubUser,
     isGitHubRepository,
     isAddNote,
+    isRemoveNote,
+    isSearchNote,
+    isUpdateNote,
   ].some((typePredicate) => typePredicate(value));
 }
 
@@ -293,6 +351,18 @@ export function isAddNote(value: unknown): value is AddNote {
   return svt.isInterface<AddNote>(value, {type: CommandTag.AddNote, data: isAddNoteData});
 }
 
+export function isRemoveNote(value: unknown): value is RemoveNote {
+  return svt.isInterface<RemoveNote>(value, {type: CommandTag.RemoveNote, data: svt.isString});
+}
+
+export function isSearchNote(value: unknown): value is SearchNote {
+  return svt.isInterface<SearchNote>(value, {type: CommandTag.SearchNote, data: svt.isString});
+}
+
+export function isUpdateNote(value: unknown): value is UpdateNote {
+  return svt.isInterface<UpdateNote>(value, {type: CommandTag.UpdateNote, data: isUpdateNoteData});
+}
+
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
   return svt.validateWithTypeTag<Command>(
     value,
@@ -309,6 +379,9 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.GitHubUser]: validateGitHubUser,
       [CommandTag.GitHubRepository]: validateGitHubRepository,
       [CommandTag.AddNote]: validateAddNote,
+      [CommandTag.RemoveNote]: validateRemoveNote,
+      [CommandTag.SearchNote]: validateSearchNote,
+      [CommandTag.UpdateNote]: validateUpdateNote,
     },
     "type"
   );
@@ -366,6 +439,21 @@ export function validateGitHubRepository(value: unknown): svt.ValidationResult<G
 
 export function validateAddNote(value: unknown): svt.ValidationResult<AddNote> {
   return svt.validate<AddNote>(value, {type: CommandTag.AddNote, data: validateAddNoteData});
+}
+
+export function validateRemoveNote(value: unknown): svt.ValidationResult<RemoveNote> {
+  return svt.validate<RemoveNote>(value, {type: CommandTag.RemoveNote, data: svt.validateString});
+}
+
+export function validateSearchNote(value: unknown): svt.ValidationResult<SearchNote> {
+  return svt.validate<SearchNote>(value, {type: CommandTag.SearchNote, data: svt.validateString});
+}
+
+export function validateUpdateNote(value: unknown): svt.ValidationResult<UpdateNote> {
+  return svt.validate<UpdateNote>(value, {
+    type: CommandTag.UpdateNote,
+    data: validateUpdateNoteData,
+  });
 }
 
 export type BotUser = {

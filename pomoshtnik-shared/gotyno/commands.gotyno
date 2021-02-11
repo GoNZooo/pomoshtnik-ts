@@ -11,6 +11,12 @@ struct AddNoteData {
     body: String
 }
 
+struct UpdateNoteData {
+    uuid: String
+    title: String
+    body: String
+}
+
 union Command {
     Ping
     WhoAreYou
@@ -24,6 +30,9 @@ union Command {
     GitHubUser: String
     GitHubRepository: RepositorySearchType
     AddNote: AddNoteData
+    RemoveNote: String
+    SearchNote: String
+    UpdateNote: UpdateNoteData
 }
 
 struct BotUser {

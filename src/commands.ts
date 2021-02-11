@@ -6,6 +6,7 @@ import {
   RepositoryByName,
   RepositoryByTopics,
   RepositorySearchTypeTag,
+  UpdateNoteData,
   validateCommand,
 } from "../pomoshtnik-shared/gotyno/commands";
 import {ValidationResult} from "simple-validation-tools";
@@ -24,6 +25,9 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!github-repo": CommandTag.GitHubRepository,
     "!users": CommandTag.Users,
     "!add-note": CommandTag.AddNote,
+    "!update-note": CommandTag.UpdateNote,
+    "!remove-note": CommandTag.RemoveNote,
+    "!search-note": CommandTag.SearchNote,
   };
 
   const githubRepositorySearchTypes: {[key: string]: RepositorySearchTypeTag} = {
@@ -70,6 +74,14 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
         const [title, ...bodyRest] = rest;
         const body = bodyRest.join(" ");
         const data: AddNoteData = {title, body};
+
+        return validateCommand({type, data});
+      }
+
+      case CommandTag.UpdateNote: {
+        const [uuid, title, ...bodyRest] = rest;
+        const body = bodyRest.join(" ");
+        const data: UpdateNoteData = {uuid, title, body};
 
         return validateCommand({type, data});
       }

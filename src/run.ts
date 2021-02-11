@@ -28,15 +28,18 @@ import {
   Note,
   Person,
   PersonSearch,
+  RemoveNote,
   RepositorySearchTypeTag,
   SearchCommand,
   SearchCommandTag,
   SearchEntry,
   SearchFailure,
+  SearchNote,
   SearchResultTag,
   SearchSuccess,
   Show,
   ShowSearch,
+  UpdateNote,
   ValidationError,
 } from "../pomoshtnik-shared/gotyno/commands";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
@@ -52,6 +55,9 @@ import {
   getSearches,
   getSearchesByResultLike,
   getUsers,
+  removeNote,
+  searchNote,
+  updateNote,
 } from "./database";
 import {
   ApiRequestTag,
@@ -415,6 +421,53 @@ async function handleAddNoteCommand(
   await message.reply(`Inserted note with UUID '${insertedNote.uuid}'`);
 }
 
+async function handleRemoveNoteCommand(
+  command: RemoveNote,
+  message: Discord.Message
+): Promise<void> {
+  const result = await removeNote(mongoDatabase, command.data);
+
+  if (result) {
+    await message.reply(`Removed note with UUID '${command.data}'`);
+  } else {
+    await message.reply(`Unable to remove note with UUID '${command.data}'`);
+  }
+}
+
+async function handleUpdateNoteCommand(
+  command: UpdateNote,
+  botUser: BotUser,
+  message: Discord.Message,
+  nowTimestamp: string
+): Promise<void> {
+  const {uuid, title, body} = command.data;
+
+  const result = await updateNote(mongoDatabase, uuid, title, body, nowTimestamp);
+
+  if (result) {
+    await message.reply(`Updated note with UUID '${uuid}'`);
+  } else {
+    await message.reply(`Unable to update note with UUID '${uuid}'`);
+  }
+}
+
+async function handleSearchNoteCommand(
+  command: SearchNote,
+  botUser: BotUser,
+  message: Discord.Message
+): Promise<void> {
+  const results = await searchNote(mongoDatabase, message.author.username, command.data);
+
+  const embed = new Discord.MessageEmbed();
+  if (results.length === 0) {
+    await replyTo(message, {text: "No notes with that content."});
+  } else {
+    results.forEach((n) => embed.addField(`${n.title} (${n.uuid})`, n.body));
+
+    await replyTo(message, {embed});
+  }
+}
+
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   const lastSeen = new Date().toISOString();
   const nickname = message.author.username;
@@ -498,6 +551,24 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.AddNote: {
       await handleAddNoteCommand(command, botUser, uuid, message, nowTimestamp);
+
+      return;
+    }
+
+    case CommandTag.RemoveNote: {
+      await handleRemoveNoteCommand(command, message);
+
+      return;
+    }
+
+    case CommandTag.UpdateNote: {
+      await handleUpdateNoteCommand(command, botUser, message, nowTimestamp);
+
+      return;
+    }
+
+    case CommandTag.SearchNote: {
+      await handleSearchNoteCommand(command, botUser, message);
 
       return;
     }
