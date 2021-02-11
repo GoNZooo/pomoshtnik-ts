@@ -84,14 +84,17 @@ export async function addNote(database: Db, note: Note): Promise<HasMongoId<Note
   }
 }
 
-export async function removeNote(database: Db, uuid: string): Promise<boolean> {
-  const result = await database.collection("notes").deleteOne({uuid});
+export async function removeNote(database: Db, nickname: string, uuid: string): Promise<boolean> {
+  const result = await database
+    .collection("notes")
+    .deleteOne({$and: [{"user.nickname": nickname}, {uuid}]});
 
   return result.deletedCount === 1;
 }
 
 export async function updateNote(
   database: Db,
+  nickname: string,
   uuid: string,
   title: string,
   body: string,
@@ -99,7 +102,10 @@ export async function updateNote(
 ): Promise<boolean> {
   const result = await database
     .collection("notes")
-    .updateOne({uuid}, {$set: {title, body, updated: nowTimestamp}});
+    .updateOne(
+      {$and: [{"user.nickname": nickname}, {uuid}]},
+      {$set: {title, body, updated: nowTimestamp}}
+    );
 
   return result.modifiedCount === 1;
 }

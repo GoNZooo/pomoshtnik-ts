@@ -423,9 +423,10 @@ async function handleAddNoteCommand(
 
 async function handleRemoveNoteCommand(
   command: RemoveNote,
+  botUser: BotUser,
   message: Discord.Message
 ): Promise<void> {
-  const result = await removeNote(mongoDatabase, command.data);
+  const result = await removeNote(mongoDatabase, botUser.nickname, command.data);
 
   if (result) {
     await message.reply(`Removed note with UUID '${command.data}'`);
@@ -442,7 +443,14 @@ async function handleUpdateNoteCommand(
 ): Promise<void> {
   const {uuid, title, body} = command.data;
 
-  const result = await updateNote(mongoDatabase, uuid, title, body, nowTimestamp);
+  const result = await updateNote(
+    mongoDatabase,
+    message.author.username,
+    uuid,
+    title,
+    body,
+    nowTimestamp
+  );
 
   if (result) {
     await message.reply(`Updated note with UUID '${uuid}'`);
@@ -556,7 +564,7 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
     }
 
     case CommandTag.RemoveNote: {
-      await handleRemoveNoteCommand(command, message);
+      await handleRemoveNoteCommand(command, botUser, message);
 
       return;
     }
