@@ -1,6 +1,7 @@
 import * as React from "react";
 import {BotUser} from "../../shared/gotyno/commands";
 import {ApplicationEvent} from "../../shared/gotyno/api";
+import {List, ListItem, ListItemText} from "@material-ui/core";
 
 export type Props = {
   users: BotUser[];
@@ -11,11 +12,15 @@ function Users({users}: Props) {
   return (
     <>
       <h1>Users</h1>
-      <ul>
+      <List>
         {users.map((u, index) => (
-          <li key={index}>{u.nickname}</li>
+          <ListItem dense button key={index}>
+            <ListItemText>
+              {u.nickname} ({u.lastCommand.type} @ {u.lastSeen})
+            </ListItemText>
+          </ListItem>
         ))}
-      </ul>
+      </List>
     </>
   );
 }
