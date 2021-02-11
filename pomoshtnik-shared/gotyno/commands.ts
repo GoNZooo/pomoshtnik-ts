@@ -76,6 +76,19 @@ export function validateRepositoryByTopics(
   });
 }
 
+export type AddNoteData = {
+  title: string;
+  body: string;
+};
+
+export function isAddNoteData(value: unknown): value is AddNoteData {
+  return svt.isInterface<AddNoteData>(value, {title: svt.isString, body: svt.isString});
+}
+
+export function validateAddNoteData(value: unknown): svt.ValidationResult<AddNoteData> {
+  return svt.validate<AddNoteData>(value, {title: svt.validateString, body: svt.validateString});
+}
+
 export type Command =
   | Ping
   | WhoAreYou
@@ -87,7 +100,8 @@ export type Command =
   | Person
   | Show
   | GitHubUser
-  | GitHubRepository;
+  | GitHubRepository
+  | AddNote;
 
 export enum CommandTag {
   Ping = "Ping",
@@ -101,6 +115,7 @@ export enum CommandTag {
   Show = "Show",
   GitHubUser = "GitHubUser",
   GitHubRepository = "GitHubRepository",
+  AddNote = "AddNote",
 }
 
 export type Ping = {
@@ -154,6 +169,11 @@ export type GitHubRepository = {
   data: RepositorySearchType;
 };
 
+export type AddNote = {
+  type: CommandTag.AddNote;
+  data: AddNoteData;
+};
+
 export function Ping(): Ping {
   return {type: CommandTag.Ping};
 }
@@ -198,6 +218,10 @@ export function GitHubRepository(data: RepositorySearchType): GitHubRepository {
   return {type: CommandTag.GitHubRepository, data};
 }
 
+export function AddNote(data: AddNoteData): AddNote {
+  return {type: CommandTag.AddNote, data};
+}
+
 export function isCommand(value: unknown): value is Command {
   return [
     isPing,
@@ -211,6 +235,7 @@ export function isCommand(value: unknown): value is Command {
     isShow,
     isGitHubUser,
     isGitHubRepository,
+    isAddNote,
   ].some((typePredicate) => typePredicate(value));
 }
 
@@ -264,6 +289,10 @@ export function isGitHubRepository(value: unknown): value is GitHubRepository {
   });
 }
 
+export function isAddNote(value: unknown): value is AddNote {
+  return svt.isInterface<AddNote>(value, {type: CommandTag.AddNote, data: isAddNoteData});
+}
+
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
   return svt.validateWithTypeTag<Command>(
     value,
@@ -279,6 +308,7 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.Show]: validateShow,
       [CommandTag.GitHubUser]: validateGitHubUser,
       [CommandTag.GitHubRepository]: validateGitHubRepository,
+      [CommandTag.AddNote]: validateAddNote,
     },
     "type"
   );
@@ -334,6 +364,66 @@ export function validateGitHubRepository(value: unknown): svt.ValidationResult<G
   });
 }
 
+export function validateAddNote(value: unknown): svt.ValidationResult<AddNote> {
+  return svt.validate<AddNote>(value, {type: CommandTag.AddNote, data: validateAddNoteData});
+}
+
+export type BotUser = {
+  nickname: string;
+  lastCommand: Command;
+  lastSeen: string;
+  uuid: string;
+};
+
+export function isBotUser(value: unknown): value is BotUser {
+  return svt.isInterface<BotUser>(value, {
+    nickname: svt.isString,
+    lastCommand: isCommand,
+    lastSeen: svt.isString,
+    uuid: svt.isString,
+  });
+}
+
+export function validateBotUser(value: unknown): svt.ValidationResult<BotUser> {
+  return svt.validate<BotUser>(value, {
+    nickname: svt.validateString,
+    lastCommand: validateCommand,
+    lastSeen: svt.validateString,
+    uuid: svt.validateString,
+  });
+}
+
+export type Note = {
+  title: string;
+  body: string;
+  uuid: string;
+  created: string;
+  updated: string;
+  user: BotUser;
+};
+
+export function isNote(value: unknown): value is Note {
+  return svt.isInterface<Note>(value, {
+    title: svt.isString,
+    body: svt.isString,
+    uuid: svt.isString,
+    created: svt.isString,
+    updated: svt.isString,
+    user: isBotUser,
+  });
+}
+
+export function validateNote(value: unknown): svt.ValidationResult<Note> {
+  return svt.validate<Note>(value, {
+    title: svt.validateString,
+    body: svt.validateString,
+    uuid: svt.validateString,
+    created: svt.validateString,
+    updated: svt.validateString,
+    user: validateBotUser,
+  });
+}
+
 export type DiscordErrorData = {
   commandText: string;
   name: string;
@@ -386,31 +476,6 @@ export function validateValidationErrorData(
   return svt.validate<ValidationErrorData>(value, {
     commandText: svt.validateString,
     reason: svt.validateString,
-  });
-}
-
-export type BotUser = {
-  nickname: string;
-  lastCommand: Command;
-  lastSeen: string;
-  uuid: string;
-};
-
-export function isBotUser(value: unknown): value is BotUser {
-  return svt.isInterface<BotUser>(value, {
-    nickname: svt.isString,
-    lastCommand: isCommand,
-    lastSeen: svt.isString,
-    uuid: svt.isString,
-  });
-}
-
-export function validateBotUser(value: unknown): svt.ValidationResult<BotUser> {
-  return svt.validate<BotUser>(value, {
-    nickname: svt.validateString,
-    lastCommand: validateCommand,
-    lastSeen: svt.validateString,
-    uuid: svt.validateString,
   });
 }
 

@@ -1,4 +1,5 @@
 import {
+  AddNoteData,
   Command,
   CommandTag,
   GitHubRepository,
@@ -22,6 +23,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!github-user": CommandTag.GitHubUser,
     "!github-repo": CommandTag.GitHubRepository,
     "!users": CommandTag.Users,
+    "!add-note": CommandTag.AddNote,
   };
 
   const githubRepositorySearchTypes: {[key: string]: RepositorySearchTypeTag} = {
@@ -60,6 +62,14 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
 
       case CommandTag.MovieById: {
         const data = parseInt(rest[0], 10);
+
+        return validateCommand({type, data});
+      }
+
+      case CommandTag.AddNote: {
+        const [title, ...bodyRest] = rest;
+        const body = bodyRest.join(" ");
+        const data: AddNoteData = {title, body};
 
         return validateCommand({type, data});
       }

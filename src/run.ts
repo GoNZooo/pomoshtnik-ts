@@ -10,6 +10,7 @@ import {createServer} from "http";
 import io from "socket.io";
 import cors from "cors";
 import {
+  AddNote,
   BotUser,
   Command,
   CommandTag,
@@ -24,6 +25,7 @@ import {
   MovieCandidatesSearch,
   MovieSearch,
   NoResults,
+  Note,
   Person,
   PersonSearch,
   RepositorySearchTypeTag,
@@ -42,6 +44,7 @@ import {CastEntry, MovieData} from "../pomoshtnik-shared/gotyno/tmdb";
 import {Db, MongoClient} from "mongodb";
 import {Reply, replyTo} from "./discord";
 import {
+  addNote,
   addSearchCommandResult,
   addUserIfUnique,
   connectToDatabase,
@@ -391,11 +394,33 @@ async function handleMovieCandidatesCommand(
   }
 }
 
+async function handleAddNoteCommand(
+  {data: {title, body}}: AddNote,
+  botUser: BotUser,
+  uuid: string,
+  message: Discord.Message,
+  nowTimestamp: string
+): Promise<void> {
+  const note: Note = {
+    title,
+    body,
+    uuid,
+    user: botUser,
+    created: nowTimestamp,
+    updated: nowTimestamp,
+  };
+
+  const insertedNote = await addNote(mongoDatabase, note);
+
+  await message.reply(`Inserted note with UUID '${insertedNote.uuid}'`);
+}
+
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   const lastSeen = new Date().toISOString();
   const nickname = message.author.username;
   const lastCommand = command;
   const uuid = uuidv4();
+  const nowTimestamp = lastSeen;
   const botUser = {lastSeen, lastCommand, nickname, uuid};
   await addUserIfUnique(mongoDatabase, botUser);
   switch (command.type) {
@@ -467,6 +492,12 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Users: {
       await handleUsersCommand(command, message);
+
+      return;
+    }
+
+    case CommandTag.AddNote: {
+      await handleAddNoteCommand(command, botUser, uuid, message, nowTimestamp);
 
       return;
     }

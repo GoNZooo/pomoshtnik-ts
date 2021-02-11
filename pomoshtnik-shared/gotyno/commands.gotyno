@@ -6,6 +6,11 @@ union RepositorySearchType {
     RepositoryByTopics: []String
 }
 
+struct AddNoteData {
+    title: String
+    body: String
+}
+
 union Command {
     Ping
     WhoAreYou
@@ -18,6 +23,23 @@ union Command {
     Show: String
     GitHubUser: String
     GitHubRepository: RepositorySearchType
+    AddNote: AddNoteData
+}
+
+struct BotUser {
+    nickname: String
+    lastCommand: Command
+    lastSeen: String
+    uuid: String
+}
+
+struct Note {
+    title: String
+    body: String
+    uuid: String
+    created: String
+    updated: String
+    user: BotUser
 }
 
 struct DiscordErrorData {
@@ -33,13 +55,6 @@ struct DiscordErrorData {
 struct ValidationErrorData {
     commandText: String
     reason: String
-}
-
-struct BotUser {
-    nickname: String
-    lastCommand: Command
-    lastSeen: String
-    uuid: String
 }
 
 union CommandError {

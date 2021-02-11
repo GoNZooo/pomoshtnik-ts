@@ -75,7 +75,9 @@ function handleClientEvent(state: State, event: ClientEvent): State {
     }
 
     case ClientEventTag.SetGetSearchesFilter: {
-      return {...state, getSearchesFilter: event.data};
+      const filteredSearches = applyGetSearchesFilter(event.data, state.searches);
+
+      return {...state, getSearchesFilter: event.data, filteredSearches};
     }
 
     case ClientEventTag.ConnectToWebSocket: {

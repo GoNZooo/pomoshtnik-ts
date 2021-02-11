@@ -74,7 +74,6 @@ function ApiExecutor({requests, dispatch}: Props) {
 export default ApiExecutor;
 
 async function getSearches(filter: GetSearchesFilter): Promise<SearchCommand[]> {
-  console.log("getting searches");
   const result = await fetch("/api/searches", {
     method: "POST",
     mode: "cors",

@@ -28,7 +28,9 @@ export function getSearchFailureText(failure: CommandError): string {
   }
 }
 
-export function hasMongoId<T>(value: unknown): value is T & {_id: string} {
+export type HasMongoId<T> = T & {_id: string};
+
+export function hasMongoId<T>(value: unknown): value is HasMongoId<T> {
   return typeof value === "object" && value !== null && "_id" in value;
 }
 

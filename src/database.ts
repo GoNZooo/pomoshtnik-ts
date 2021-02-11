@@ -1,6 +1,6 @@
 import {Db, FilterQuery, MongoClient, ObjectId} from "mongodb";
-import {BotUser, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
-import {searchResult} from "../pomoshtnik-shared/utilities";
+import {BotUser, Note, SearchCommand} from "../pomoshtnik-shared/gotyno/commands";
+import {HasMongoId, searchResult} from "../pomoshtnik-shared/utilities";
 import SocketIO from "socket.io";
 import {SearchAdded} from "../pomoshtnik-shared/gotyno/api";
 
@@ -73,6 +73,15 @@ export async function deleteSearchByMongoId(database: Db, id: string): Promise<b
   const result = await database.collection("searches").deleteOne({_id: new ObjectId(id)});
 
   return result.result.ok === 1;
+}
+
+export async function addNote(database: Db, note: Note): Promise<HasMongoId<Note>> {
+  const result = await database.collection("notes").insertOne(note);
+  if (result.insertedCount === 1) {
+    return {_id: result.insertedId, ...note};
+  } else {
+    throw new Error("Unable to insert note");
+  }
 }
 
 const DESCENDING_ORDER = -1;
