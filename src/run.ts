@@ -470,7 +470,7 @@ async function handleSearchNoteCommand(
   if (results.length === 0) {
     await replyTo(message, {text: "No notes with that content."});
   } else {
-    results.forEach((n) => embed.addField(`${n.title} (${n.uuid})`, n.body));
+    results.forEach((n) => embed.addField(n.title, `\`${n.uuid}\`\n\n${n.body}`));
 
     await replyTo(message, {embed});
   }
