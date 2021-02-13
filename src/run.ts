@@ -938,9 +938,22 @@ export const handleShowCommand = async (
           case "Valid": {
             const show = maybeShow.value;
 
+            const nextEpisode = show.next_episode_to_air;
             const lastEpisode = show.last_episode_to_air;
 
             const padding = 2;
+            const nextEpisodeDescription =
+              nextEpisode !== null
+                ? [
+                    `**${nextEpisode?.name}** (S${nextEpisode?.season_number
+                      .toFixed(0)
+                      .padStart(padding, "0")}E${nextEpisode?.episode_number
+                      .toFixed(0)
+                      .padStart(padding, "0")}) to air on **${nextEpisode?.air_date ?? "N/A"}**`,
+                    `${nextEpisode?.overview ?? "N/A"}`,
+                  ].join("\n")
+                : "N/A";
+
             const lastEpisodeDescription =
               lastEpisode !== null
                 ? [
@@ -965,6 +978,7 @@ export const handleShowCommand = async (
             });
 
             embed.addField("Description", show.overview);
+            embed.addField("Next Episode", nextEpisodeDescription);
             embed.addField("Last Episode", lastEpisodeDescription);
 
             const castEntries = (show.credits.cast ?? [])

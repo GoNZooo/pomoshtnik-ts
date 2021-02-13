@@ -389,6 +389,7 @@ export type Show = {
   first_air_date: string | null | undefined;
   overview: string;
   credits: Credits;
+  next_episode_to_air: Episode | null | undefined;
   last_episode_to_air: Episode | null | undefined;
   seasons: Season[];
 };
@@ -403,6 +404,7 @@ export function isShow(value: unknown): value is Show {
     first_air_date: svt.optional(svt.isString),
     overview: svt.isString,
     credits: isCredits,
+    next_episode_to_air: svt.optional(isEpisode),
     last_episode_to_air: svt.optional(isEpisode),
     seasons: svt.arrayOf(isSeason),
   });
@@ -418,6 +420,7 @@ export function validateShow(value: unknown): svt.ValidationResult<Show> {
     first_air_date: svt.validateOptional(svt.validateString),
     overview: svt.validateString,
     credits: validateCredits,
+    next_episode_to_air: svt.validateOptional(validateEpisode),
     last_episode_to_air: svt.validateOptional(validateEpisode),
     seasons: svt.validateArray(validateSeason),
   });
