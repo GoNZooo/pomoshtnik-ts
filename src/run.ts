@@ -43,7 +43,7 @@ import {
   ValidationError,
 } from "../pomoshtnik-shared/gotyno/commands";
 import {getRepository, getUser, searchRepositoriesByTopic} from "./github";
-import {CastEntry, MovieData} from "../pomoshtnik-shared/gotyno/tmdb";
+import {CastEntry, Episode, MovieData} from "../pomoshtnik-shared/gotyno/tmdb";
 import {Db, MongoClient} from "mongodb";
 import {Reply, replyTo} from "./discord";
 import {
@@ -920,6 +920,19 @@ export const handleShowCommand = async (
   uuid: string,
   message: Discord.Message
 ): Promise<void> => {
+  function episodeDescription(episode: Episode, splitterSentence: string): string {
+    const padding = 2;
+
+    return [
+      `**${episode.name}** (S${episode.season_number
+        .toFixed(0)
+        .padStart(padding, "0")}E${episode.episode_number
+        .toFixed(0)
+        .padStart(padding, "0")}) ${splitterSentence} **${episode.air_date ?? "N/A"}**`,
+      `${episode.overview ?? "N/A"}`,
+    ].join("\n");
+  }
+
   const maybeShows = await tmdb.searchShow(tmdbApiKey, command.data);
 
   switch (maybeShows.type) {
@@ -938,32 +951,14 @@ export const handleShowCommand = async (
           case "Valid": {
             const show = maybeShow.value;
 
-            const nextEpisode = show.next_episode_to_air;
-            const lastEpisode = show.last_episode_to_air;
-
-            const padding = 2;
             const nextEpisodeDescription =
-              nextEpisode !== null
-                ? [
-                    `**${nextEpisode?.name}** (S${nextEpisode?.season_number
-                      .toFixed(0)
-                      .padStart(padding, "0")}E${nextEpisode?.episode_number
-                      .toFixed(0)
-                      .padStart(padding, "0")}) to air on **${nextEpisode?.air_date ?? "N/A"}**`,
-                    `${nextEpisode?.overview ?? "N/A"}`,
-                  ].join("\n")
+              show.next_episode_to_air !== null && show.next_episode_to_air !== undefined
+                ? episodeDescription(show.next_episode_to_air, "to air on")
                 : "N/A";
 
             const lastEpisodeDescription =
-              lastEpisode !== null
-                ? [
-                    `**${lastEpisode?.name}** (S${lastEpisode?.season_number
-                      .toFixed(0)
-                      .padStart(padding, "0")}E${lastEpisode?.episode_number
-                      .toFixed(0)
-                      .padStart(padding, "0")}) aired on **${lastEpisode?.air_date ?? "N/A"}**`,
-                    `${lastEpisode?.overview ?? "N/A"}`,
-                  ].join("\n")
+              show.last_episode_to_air !== null && show.last_episode_to_air !== undefined
+                ? episodeDescription(show.last_episode_to_air, "aired on")
                 : "N/A";
 
             const url =
