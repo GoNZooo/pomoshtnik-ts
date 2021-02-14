@@ -5470,12 +5470,12 @@ globby@^6.1.0:
     pify "^2.0.0"
     pinkie-promise "^2.0.0"
 
-gotyno@^0.3.9:
-  version "0.3.9"
-  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.3.9.tgz#e3f54985f306b6b1e25322fba1e1b3e57e7e8d16"
-  integrity sha512-K3de9+BJ6KQjLSbhXRYYZOSRtxt5G+DpyweGZEYw4oaA2tcaX7xAs8Wh3uTwYGylKZIjd/HmPw03syEYa87xKw==
+gotyno@^0.3.10:
+  version "0.3.10"
+  resolved "https://registry.yarnpkg.com/gotyno/-/gotyno-0.3.10.tgz#679af251666bff6e3f7f8778217a370c87e215ce"
+  integrity sha512-3Q6XSTcCMr8cZrp0QyQ3Gz/mg9nYdgLNnEzg9JtD3FaQvbFyTnRiq65+T87fO2zF7RjDw1dgYch/IVQ9z4IWvw==
   dependencies:
-    simple-validation-tools "1.3.0"
+    simple-validation-tools "1.3.1"
 
 graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.2.0, graceful-fs@^4.2.4:
   version "4.2.4"
@@ -10110,10 +10110,10 @@ simple-swizzle@^0.2.2:
   dependencies:
     is-arrayish "^0.3.1"
 
-simple-validation-tools@1.3.0, simple-validation-tools@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/simple-validation-tools/-/simple-validation-tools-1.3.0.tgz#c62cb2f6e88201995f372ed9094b0732bf2c1fa9"
-  integrity sha512-EUR9exe78TS65XbobNofvHKrZcqx/V0rWauqM+CPfsvgYWVtcixDnTbrqEpkaGTJJ3xYtQC7R8jf4Bvsm602zw==
+simple-validation-tools@1.3.1, simple-validation-tools@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/simple-validation-tools/-/simple-validation-tools-1.3.1.tgz#dee6419758db3fd42946c6519497542612be0447"
+  integrity sha512-i4IeLf5SV7qkiHSRhZprjvEOCeWh+Ghd1HJCH4SmFMNLBzN9vq3p68vdJ9a5FQYYuYqwwE+44vpV6Xo5SpcCSQ==
 
 sisteransi@^1.0.5:
   version "1.0.5"
