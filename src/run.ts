@@ -954,7 +954,7 @@ export const handleShowCommand = async (
             const nextEpisodeDescription =
               show.next_episode_to_air !== null && show.next_episode_to_air !== undefined
                 ? episodeDescription(show.next_episode_to_air, "to air on")
-                : "N/A";
+                : null;
 
             const lastEpisodeDescription =
               show.last_episode_to_air !== null && show.last_episode_to_air !== undefined
@@ -973,8 +973,11 @@ export const handleShowCommand = async (
             });
 
             embed.addField("Description", show.overview);
-            embed.addField("Next Episode", nextEpisodeDescription);
             embed.addField("Last Episode", lastEpisodeDescription);
+
+            if (nextEpisodeDescription !== null) {
+              embed.addField("Next Episode", nextEpisodeDescription);
+            }
 
             const castEntries = (show.credits.cast ?? [])
               .slice(0, MAX_EMBED_CAST_ENTRIES)
