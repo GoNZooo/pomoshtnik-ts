@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "nodemon ./src/run.ts",
-    "build:types": "gotyno -ts = pomoshtnik-shared/gotyno/utilityTypes.gotyno pomoshtnik-shared/gotyno/tmdb.gotyno pomoshtnik-shared/gotyno/github.gotyno pomoshtnik-shared/gotyno/commands.gotyno pomoshtnik-shared/gotyno/api.gotyno",
+    "build:types": "gotyno -ts = pomoshtnik-shared/gotyno/uo.gotyno pomoshtnik-shared/gotyno/utilityTypes.gotyno pomoshtnik-shared/gotyno/tmdb.gotyno pomoshtnik-shared/gotyno/github.gotyno pomoshtnik-shared/gotyno/commands.gotyno pomoshtnik-shared/gotyno/api.gotyno",
     "build:types:watch": "watchexec -f \"*.gotyno\" -w pomoshtnik-shared/gotyno \"yarn build:types\"",
     "postbuild:types": "yarn prettier --write pomoshtnik-shared/gotyno/*.ts"
   },

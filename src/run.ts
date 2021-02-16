@@ -39,6 +39,7 @@ import {
   SearchSuccess,
   Show,
   ShowSearch,
+  Spell,
   UpdateNote,
   ValidationError,
 } from "../pomoshtnik-shared/gotyno/commands";
@@ -69,6 +70,7 @@ import {
   validateApiRequest,
   validateGetSearchesFilter,
 } from "../pomoshtnik-shared/gotyno/api";
+import {getSpellDescription} from "./uo";
 
 const DEFAULT_APPLICATION_PORT = 2999;
 
@@ -476,6 +478,21 @@ async function handleSearchNoteCommand(
   }
 }
 
+async function handleSpell(command: Spell, message: Discord.Message): Promise<void> {
+  const {spell, translatedWords, powerWords} = getSpellDescription(command.data);
+  const embed = new Discord.MessageEmbed();
+  const titleCasedSpell = spell
+    .split(" ")
+    .map((word) => `${word[0].toUpperCase()}${word.substr(1)}`)
+    .join(" ");
+
+  embed.addField("Spell", titleCasedSpell);
+  embed.addField("Power Words", powerWords.join(" "));
+  embed.addField("Translated Words", translatedWords.map((w) => `[${w}]`).join(" "));
+
+  await replyTo(message, {embed});
+}
+
 const handleCommand = async (command: Command, message: Discord.Message): Promise<void> => {
   const lastSeen = new Date().toISOString();
   const nickname = message.author.username;
@@ -577,6 +594,12 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.SearchNote: {
       await handleSearchNoteCommand(command, botUser, message);
+
+      return;
+    }
+
+    case CommandTag.Spell: {
+      await handleSpell(command, message);
 
       return;
     }

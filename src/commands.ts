@@ -28,6 +28,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!update-note": CommandTag.UpdateNote,
     "!remove-note": CommandTag.RemoveNote,
     "!search-note": CommandTag.SearchNote,
+    "!spell": CommandTag.Spell,
   };
 
   const githubRepositorySearchTypes: {[key: string]: RepositorySearchTypeTag} = {
@@ -84,6 +85,10 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
         const data: UpdateNoteData = {uuid, title, body};
 
         return validateCommand({type, data});
+      }
+
+      case CommandTag.Spell: {
+        return validateCommand({type, data: rest.join(" ").toLowerCase()});
       }
 
       default: {

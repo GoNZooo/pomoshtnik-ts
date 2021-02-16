@@ -4,6 +4,8 @@ import * as tmdb from "./tmdb";
 
 import * as github from "./github";
 
+import * as uo from "./uo";
+
 export type RepositorySearchType = RepositoryByName | RepositoryByTopics;
 
 export enum RepositorySearchTypeTag {
@@ -126,7 +128,8 @@ export type Command =
   | AddNote
   | RemoveNote
   | SearchNote
-  | UpdateNote;
+  | UpdateNote
+  | Spell;
 
 export enum CommandTag {
   Ping = "Ping",
@@ -144,6 +147,7 @@ export enum CommandTag {
   RemoveNote = "RemoveNote",
   SearchNote = "SearchNote",
   UpdateNote = "UpdateNote",
+  Spell = "Spell",
 }
 
 export type Ping = {
@@ -217,6 +221,11 @@ export type UpdateNote = {
   data: UpdateNoteData;
 };
 
+export type Spell = {
+  type: CommandTag.Spell;
+  data: uo.Spell;
+};
+
 export function Ping(): Ping {
   return {type: CommandTag.Ping};
 }
@@ -277,6 +286,10 @@ export function UpdateNote(data: UpdateNoteData): UpdateNote {
   return {type: CommandTag.UpdateNote, data};
 }
 
+export function Spell(data: uo.Spell): Spell {
+  return {type: CommandTag.Spell, data};
+}
+
 export function isCommand(value: unknown): value is Command {
   return [
     isPing,
@@ -294,6 +307,7 @@ export function isCommand(value: unknown): value is Command {
     isRemoveNote,
     isSearchNote,
     isUpdateNote,
+    isSpell,
   ].some((typePredicate) => typePredicate(value));
 }
 
@@ -363,6 +377,10 @@ export function isUpdateNote(value: unknown): value is UpdateNote {
   return svt.isInterface<UpdateNote>(value, {type: CommandTag.UpdateNote, data: isUpdateNoteData});
 }
 
+export function isSpell(value: unknown): value is Spell {
+  return svt.isInterface<Spell>(value, {type: CommandTag.Spell, data: uo.isSpell});
+}
+
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
   return svt.validateWithTypeTag<Command>(
     value,
@@ -382,6 +400,7 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.RemoveNote]: validateRemoveNote,
       [CommandTag.SearchNote]: validateSearchNote,
       [CommandTag.UpdateNote]: validateUpdateNote,
+      [CommandTag.Spell]: validateSpell,
     },
     "type"
   );
@@ -454,6 +473,10 @@ export function validateUpdateNote(value: unknown): svt.ValidationResult<UpdateN
     type: CommandTag.UpdateNote,
     data: validateUpdateNoteData,
   });
+}
+
+export function validateSpell(value: unknown): svt.ValidationResult<Spell> {
+  return svt.validate<Spell>(value, {type: CommandTag.Spell, data: uo.validateSpell});
 }
 
 export type BotUser = {

@@ -1,5 +1,6 @@
 import tmdb
 import github
+import uo
 
 union RepositorySearchType {
     RepositoryByName: String
@@ -33,6 +34,7 @@ union Command {
     RemoveNote: String
     SearchNote: String
     UpdateNote: UpdateNoteData
+    Spell: uo.Spell
 }
 
 struct BotUser {
