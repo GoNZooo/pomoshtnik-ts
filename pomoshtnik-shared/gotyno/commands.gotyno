@@ -35,6 +35,7 @@ union Command {
     SearchNote: String
     UpdateNote: UpdateNoteData
     Spell: uo.Spell
+    Spells
 }
 
 struct BotUser {

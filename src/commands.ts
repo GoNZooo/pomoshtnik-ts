@@ -29,6 +29,7 @@ export function commandFromStrings(strings: string[]): ValidationResult<Command>
     "!remove-note": CommandTag.RemoveNote,
     "!search-note": CommandTag.SearchNote,
     "!spell": CommandTag.Spell,
+    "!spells": CommandTag.Spells,
   };
 
   const githubRepositorySearchTypes: {[key: string]: RepositorySearchTypeTag} = {

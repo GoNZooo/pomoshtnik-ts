@@ -129,7 +129,8 @@ export type Command =
   | RemoveNote
   | SearchNote
   | UpdateNote
-  | Spell;
+  | Spell
+  | Spells;
 
 export enum CommandTag {
   Ping = "Ping",
@@ -148,6 +149,7 @@ export enum CommandTag {
   SearchNote = "SearchNote",
   UpdateNote = "UpdateNote",
   Spell = "Spell",
+  Spells = "Spells",
 }
 
 export type Ping = {
@@ -226,6 +228,10 @@ export type Spell = {
   data: uo.Spell;
 };
 
+export type Spells = {
+  type: CommandTag.Spells;
+};
+
 export function Ping(): Ping {
   return {type: CommandTag.Ping};
 }
@@ -290,6 +296,10 @@ export function Spell(data: uo.Spell): Spell {
   return {type: CommandTag.Spell, data};
 }
 
+export function Spells(): Spells {
+  return {type: CommandTag.Spells};
+}
+
 export function isCommand(value: unknown): value is Command {
   return [
     isPing,
@@ -308,6 +318,7 @@ export function isCommand(value: unknown): value is Command {
     isSearchNote,
     isUpdateNote,
     isSpell,
+    isSpells,
   ].some((typePredicate) => typePredicate(value));
 }
 
@@ -381,6 +392,10 @@ export function isSpell(value: unknown): value is Spell {
   return svt.isInterface<Spell>(value, {type: CommandTag.Spell, data: uo.isSpell});
 }
 
+export function isSpells(value: unknown): value is Spells {
+  return svt.isInterface<Spells>(value, {type: CommandTag.Spells});
+}
+
 export function validateCommand(value: unknown): svt.ValidationResult<Command> {
   return svt.validateWithTypeTag<Command>(
     value,
@@ -401,6 +416,7 @@ export function validateCommand(value: unknown): svt.ValidationResult<Command> {
       [CommandTag.SearchNote]: validateSearchNote,
       [CommandTag.UpdateNote]: validateUpdateNote,
       [CommandTag.Spell]: validateSpell,
+      [CommandTag.Spells]: validateSpells,
     },
     "type"
   );
@@ -477,6 +493,10 @@ export function validateUpdateNote(value: unknown): svt.ValidationResult<UpdateN
 
 export function validateSpell(value: unknown): svt.ValidationResult<Spell> {
   return svt.validate<Spell>(value, {type: CommandTag.Spell, data: uo.validateSpell});
+}
+
+export function validateSpells(value: unknown): svt.ValidationResult<Spells> {
+  return svt.validate<Spells>(value, {type: CommandTag.Spells});
 }
 
 export type BotUser = {

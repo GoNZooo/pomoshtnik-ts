@@ -2,6 +2,7 @@ import {v4 as uuidv4} from "uuid";
 import * as Discord from "discord.js";
 import * as dotenv from "dotenv";
 import * as tmdb from "./tmdb";
+import * as uo from "./uo";
 import * as commands from "./commands";
 import * as svt from "simple-validation-tools";
 import {assertUnreachable, getSearchFailureText} from "../pomoshtnik-shared/utilities";
@@ -40,6 +41,7 @@ import {
   Show,
   ShowSearch,
   Spell,
+  Spells,
   UpdateNote,
   ValidationError,
 } from "../pomoshtnik-shared/gotyno/commands";
@@ -70,7 +72,6 @@ import {
   validateApiRequest,
   validateGetSearchesFilter,
 } from "../pomoshtnik-shared/gotyno/api";
-import {getSpellDescription} from "./uo";
 
 const DEFAULT_APPLICATION_PORT = 2999;
 
@@ -479,7 +480,7 @@ async function handleSearchNoteCommand(
 }
 
 async function handleSpell(command: Spell, message: Discord.Message): Promise<void> {
-  const {spell, translatedWords, powerWords} = getSpellDescription(command.data);
+  const {spell, translatedWords, powerWords} = uo.getSpellDescription(command.data);
   const embed = new Discord.MessageEmbed();
   const titleCasedSpell = spell
     .split(" ")
@@ -489,6 +490,15 @@ async function handleSpell(command: Spell, message: Discord.Message): Promise<vo
   embed.addField("Spell", titleCasedSpell);
   embed.addField("Power Words", powerWords.join(" "));
   embed.addField("Translated Words", translatedWords.map((w) => `[${w}]`).join(" "));
+
+  await replyTo(message, {embed});
+}
+
+async function handleSpells(command: Spells, message: Discord.Message): Promise<void> {
+  const spells = Object.keys(uo.spells);
+  const embed = new Discord.MessageEmbed();
+
+  embed.addField("Spells", spells.join("\n"));
 
   await replyTo(message, {embed});
 }
@@ -600,6 +610,12 @@ const handleCommand = async (command: Command, message: Discord.Message): Promis
 
     case CommandTag.Spell: {
       await handleSpell(command, message);
+
+      return;
+    }
+
+    case CommandTag.Spells: {
+      await handleSpells(command, message);
 
       return;
     }

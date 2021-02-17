@@ -30,7 +30,7 @@ const words = {
   Zu: "Sleep",
 } as Record<string, string>;
 
-const spells: Record<Spell, string> = {
+export const spells: Record<Spell, string> = {
   clumsy: "Uus Jux",
   "create food": "In Mani Ylem",
   feeblemind: "Rel Wis",
